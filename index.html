@@ -4,146 +4,465 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Roll'N Trailer Rentals N More LLC</title>
+
   <style>
-    body{margin:0;font-family:Arial;background:#0b0b0b;color:#fff}
-    header{text-align:center;padding:40px 20px;background:#111}
-    .accent{color:#22c55e}
-    section{padding:40px 20px;max-width:900px;margin:auto}
-    .card{background:#151515;border-radius:12px;padding:20px;margin-bottom:20px}
-    button{background:#22c55e;border:none;padding:14px;width:100%;color:#000;font-weight:700;border-radius:8px;font-size:16px;cursor:pointer}
-    input,select,textarea{width:100%;padding:12px;margin:8px 0;border-radius:8px;border:1px solid #333;background:#0f0f0f;color:#fff;box-sizing:border-box}
-    footer{text-align:center;padding:20px;background:#111;color:#777}
-    .small{font-size:12px;color:#777;line-height:1.4}
-  .card { border: 1px solid #222; box-shadow: 0 0 0 1px rgba(34,197,94,.08); }
-header { background: linear-gradient(180deg, #0b0b0b, #111); }
-h1, h2 { letter-spacing: .5px; text-transform: uppercase; }
-</body>
-</html>
+    :root{
+      --bg:#070707;
+      --panel:#0f0f0f;
+      --panel2:#141414;
+      --stroke:#242424;
+      --text:#f5f5f5;
+      --muted:#a3a3a3;
+      --accent:#22c55e;
+      --accent2:#16a34a;
+      --shadow: 0 12px 40px rgba(0,0,0,.45);
+    }
+
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    body{
+      margin:0;
+      font-family: Arial, Helvetica, sans-serif;
+      background:
+        radial-gradient(800px 400px at 20% 0%, rgba(34,197,94,.08), transparent 60%),
+        radial-gradient(800px 400px at 80% 10%, rgba(34,197,94,.06), transparent 55%),
+        var(--bg);
+      color:var(--text);
+    }
+
+    a{color:inherit}
+    .container{max-width:1100px;margin:0 auto;padding:0 18px}
+
+    /* Top bar */
+    .topbar{
+      position:sticky;top:0;z-index:20;
+      background: rgba(7,7,7,.85);
+      backdrop-filter: blur(10px);
+      border-bottom:1px solid rgba(255,255,255,.06);
+    }
+    .topbar-inner{
+      display:flex;align-items:center;justify-content:space-between;
+      padding:12px 0;
+      gap:12px;
+    }
+    .brand{
+      display:flex;align-items:center;gap:10px;min-width:0;
+    }
+    .badge{
+      width:12px;height:12px;border-radius:3px;background:var(--accent);
+      box-shadow: 0 0 0 3px rgba(34,197,94,.15);
+      flex:0 0 auto;
+    }
+    .brand h1{
+      font-size:14px;margin:0;letter-spacing:.9px;text-transform:uppercase;
+      white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+    }
+    .nav-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+
+    .btn{
+      display:inline-flex;align-items:center;justify-content:center;gap:8px;
+      padding:11px 14px;border-radius:12px;
+      text-decoration:none;font-weight:800;
+      border:1px solid rgba(255,255,255,.08);
+      background: rgba(255,255,255,.03);
+      color:var(--text);
+      transition:.15s ease;
+      box-shadow: none;
+    }
+    .btn:hover{transform:translateY(-1px);border-color:rgba(255,255,255,.14)}
+    .btn-primary{
+      background: linear-gradient(180deg, var(--accent), var(--accent2));
+      border-color: rgba(34,197,94,.35);
+      color:#04110a;
+    }
+    .btn-primary:hover{filter:brightness(1.03)}
+    .btn-ghost{color:var(--accent);border-color:rgba(34,197,94,.25)}
+    .btn-ghost:hover{border-color:rgba(34,197,94,.45)}
+
+    /* Hero */
+    header.hero{
+      padding:44px 0 24px;
+    }
+    .hero-grid{
+      display:grid;
+      grid-template-columns: 1.2fr .8fr;
+      gap:18px;
+      align-items:stretch;
+    }
+    @media (max-width: 900px){
+      .hero-grid{grid-template-columns:1fr}
+    }
+
+    .hero-card{
+      background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.015));
+      border:1px solid rgba(255,255,255,.08);
+      border-radius:22px;
+      box-shadow: var(--shadow);
+      padding:26px;
+      position:relative;
+      overflow:hidden;
+    }
+    .hero-card::before{
+      content:"";
+      position:absolute;inset:-2px;
+      background:
+        radial-gradient(600px 300px at 15% 0%, rgba(34,197,94,.12), transparent 60%),
+        radial-gradient(500px 300px at 80% 20%, rgba(34,197,94,.08), transparent 55%);
+      pointer-events:none;
+      opacity:.9;
+    }
+    .hero-card > *{position:relative}
+
+    .kicker{
+      display:inline-flex;align-items:center;gap:10px;
+      font-weight:900;letter-spacing:.6px;text-transform:uppercase;
+      color:var(--accent);
+      font-size:12px;
+      margin-bottom:10px;
+    }
+    .kicker span{
+      width:28px;height:1px;background:rgba(34,197,94,.55);display:inline-block
+    }
+
+    .hero-title{
+      font-size:44px;line-height:1.05;margin:0 0 10px;
+      letter-spacing:.5px;text-transform:uppercase;
+    }
+    @media (max-width: 600px){
+      .hero-title{font-size:34px}
+    }
+    .hero-sub{
+      margin:0 0 18px;
+      color:var(--muted);
+      font-size:16px;
+      line-height:1.6;
+      max-width:60ch;
+    }
+    .pill-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+    .pill{
+      font-size:12px;
+      color:#d6d6d6;
+      padding:8px 10px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.03);
+    }
+    .pill b{color:var(--accent)}
+
+    .info-card{
+      background: linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.01));
+      border:1px solid rgba(255,255,255,.08);
+      border-radius:22px;
+      box-shadow: var(--shadow);
+      padding:18px;
+    }
+    .info-row{
+      display:grid;grid-template-columns: 1fr;
+      gap:10px;
+    }
+    .info-item{
+      border:1px solid rgba(255,255,255,.08);
+      background: rgba(0,0,0,.25);
+      border-radius:16px;
+      padding:14px;
+    }
+    .info-item .label{font-size:12px;color:var(--muted);margin-bottom:4px}
+    .info-item .value{font-weight:900}
+    .info-item .value a{color:var(--accent);text-decoration:none}
+
+    /* Sections */
+    main{padding:18px 0 50px}
+    .section-title{
+      margin:0 0 14px;
+      font-size:18px;
+      letter-spacing:.7px;
+      text-transform:uppercase;
+      color:#eaeaea;
+    }
+
+    .card{
+      background: linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.01));
+      border:1px solid rgba(255,255,255,.08);
+      border-radius:22px;
+      box-shadow: var(--shadow);
+      padding:18px;
+      margin-bottom:16px;
+    }
+
+    .trailers{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:16px;
+    }
+    @media (max-width: 900px){
+      .trailers{grid-template-columns:1fr}
+    }
+
+    .trailer-head{
+      display:flex;align-items:flex-start;justify-content:space-between;
+      gap:12px;margin-bottom:10px;
+    }
+    .trailer-name{
+      margin:0;font-size:16px;letter-spacing:.6px;text-transform:uppercase
+    }
+    .price{
+      text-align:right;
+      font-weight:900;
+      color:var(--accent);
+      white-space:nowrap;
+    }
+    .price small{display:block;color:var(--muted);font-weight:700}
+
+    .gallery{
+      display:flex;gap:12px;overflow-x:auto;
+      padding:6px 2px 12px;
+      scroll-snap-type:x mandatory;
+    }
+    .gallery img{
+      height:240px;
+      width:auto;
+      border-radius:16px;
+      border:1px solid rgba(255,255,255,.10);
+      box-shadow: 0 10px 24px rgba(0,0,0,.35);
+      scroll-snap-align:start;
+    }
+    @media (max-width: 600px){
+      .gallery img{height:210px}
+    }
+
+    .meta{
+      margin:10px 0 0;
+      color:var(--muted);
+      line-height:1.6;
+      font-size:14px;
+    }
+
+    /* Booking */
+    form{margin-top:12px}
+    input, select, textarea{
+      width:100%;
+      padding:12px;
+      margin:8px 0;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(0,0,0,.35);
+      color:var(--text);
+      outline:none;
+    }
+    input:focus, select:focus, textarea:focus{
+      border-color: rgba(34,197,94,.35);
+      box-shadow: 0 0 0 3px rgba(34,197,94,.12);
+    }
+    textarea{min-height:110px;resize:vertical}
+
+    .submit{
+      width:100%;
+      padding:14px 16px;
+      border-radius:14px;
+      border:1px solid rgba(34,197,94,.35);
+      background: linear-gradient(180deg, var(--accent), var(--accent2));
+      color:#04110a;
+      font-weight:950;
+      letter-spacing:.5px;
+      text-transform:uppercase;
+      cursor:pointer;
+      transition:.15s ease;
+    }
+    .submit:hover{filter:brightness(1.04);transform:translateY(-1px)}
+    .fine{
+      margin:10px 0 0;
+      font-size:12px;
+      color:var(--muted);
+      line-height:1.5;
+    }
+
+    /* Map */
+    .map-wrap{
+      border-radius:18px;
+      overflow:hidden;
+      border:1px solid rgba(255,255,255,.10);
+    }
+
+    footer{
+      padding:26px 0;
+      border-top:1px solid rgba(255,255,255,.06);
+      color:#8f8f8f;
+      text-align:center;
+      font-size:13px;
+    }
   </style>
 </head>
+
 <body>
 
-<header>
-  <h1>Roll'N Trailer Rentals N More LLC</h1>
-  <p class="accent">24/7 Trailer Rentals • Serving the CSRA Area</p>
-  <a href="#booking" style="
-  display:inline-block;
-  margin-top:18px;
-  padding:14px 22px;
-  background:#22c55e;
-  color:#000;
-  font-weight:800;
-  text-decoration:none;
-  border-radius:10px;">
-  BOOK NOW
-</a>
-  <a href="tel:7143838539" style="
-display:inline-block;
-margin-top:10px;
-padding:12px 18px;
-background:#222;
-color:#22c55e;
-text-decoration:none;
-border-radius:8px;">
-Call or Text Now
-</a>
-</header>
+  <div class="topbar">
+    <div class="container topbar-inner">
+      <div class="brand">
+        <div class="badge"></div>
+        <h1>Roll'N Trailer Rentals N More LLC</h1>
+      </div>
 
-<h2 style="text-align:center;margin:0 0 22px 0;">
-  Heavy-Duty Trailer Rentals in the CSRA
-</h2>
-<p style="text-align:center;color:#9ca3af;margin-top:-8px;">
-  Fast approvals • 24/7 rentals • Deposit required to reserve
-</p>
-  
-<section>
-  <div class="card">
-    <h2>Available Trailers</h2>
-    <h3>22’ Tilt Deck Equipment Trailer — 14K</h3>
-    <p>$130/day • $650/week</p>
-    
-
-<div style="display:flex;gap:12px;overflow-x:auto;padding-bottom:10px;scroll-snap-type:x mandatory;">
-  <img src="tilt1.jpeg" style="height:220px;border-radius:12px;scroll-snap-align:start;" />
-  <img src="tilt2.jpeg" style="height:220px;border-radius:12px;scroll-snap-align:start;" />
-  <img src="tilt3.jpeg" style="height:220px;border-radius:12px;scroll-snap-align:start;" />
-  <img src="tilt4.jpeg" style="height:220px;border-radius:12px;scroll-snap-align:start;" />
-</div>    
-
-<hr style="border:1px solid #222;margin:30px 0;">
-
-<h3>20’ Steel Deck Car Hauler — 7K</h3>
-<p>$120/day • $600/week</p>
-    
-<div style="display:flex;gap:12px;overflow-x:auto;padding-bottom:10px;scroll-snap-type:x mandatory;">
-  <img src="car1.jpeg" style="height:220px;border-radius:12px;scroll-snap-align:start;" />
-  <img src="car2.jpeg" style="height:220px;border-radius:12px;scroll-snap-align:start;" />
-  <img src="car3.jpeg" style="height:220px;border-radius:12px;scroll-snap-align:start;" />
-  <img src="car4.jpeg" style="height:220px;border-radius:12px;scroll-snap-align:start;" />
-</div> 
-    <p><strong>22’ Tilt Deck Equipment Trailer — 14K</strong><br>$130/day • $650/week</p>
-    <p><strong>20’ Steel Deck Car Hauler — 7K</strong><br>$120/day • $600/week</p>
-    <p style="color:#22c55e;font-weight:bold;">
-Limited availability — reserve early to guarantee your dates.
-</p>
+      <div class="nav-actions">
+        <a class="btn btn-ghost" href="tel:7143838539">Call/Text</a>
+        <a class="btn btn-primary" href="#booking">Book Now</a>
+      </div>
+    </div>
   </div>
-  <div class="card">
-<h2>Why Rent From Us?</h2>
 
-<ul style="line-height:1.8;">
-<li>✔ Heavy-duty, well-maintained trailers</li>
-<li>✔ Fast approval and easy pickup</li>
-<li>✔ 24/7 rental availability</li>
-<li>✔ Serving the entire CSRA</li>
-<li>✔ Secure online deposits</li>
-</ul>
+  <header class="hero">
+    <div class="container hero-grid">
+      <div class="hero-card">
+        <div class="kicker"><span></span> Trailer Rentals • CSRA</div>
+        <h2 class="hero-title">Heavy-Duty Rentals<br>Ready 24/7</h2>
+        <p class="hero-sub">
+          Rugged, reliable trailers for work and transport. Pay a deposit to reserve your dates.
+          Requests are approved fast — balance due at pickup.
+        </p>
 
-</div>
-  <div class="card" id="booking">
-    <h2>Booking Request</h2>
+        <div class="pill-row">
+          <div class="pill"><b>24/7</b> rentals</div>
+          <div class="pill"><b>Fast</b> approval</div>
+          <div class="pill"><b>CSRA</b> service area</div>
+          <div class="pill"><b>Secure</b> deposits</div>
+        </div>
+      </div>
 
-    <form action="deposit.html" method="GET">
-      <input name="name" placeholder="Full Name" required />
-      <input name="phone" placeholder="Phone Number" required />
-      <input name="email" type="email" placeholder="Email (optional)" />
+      <div class="info-card">
+        <div class="info-row">
+          <div class="info-item">
+            <div class="label">Call / Text</div>
+            <div class="value"><a href="tel:7143838539">714-383-8539</a></div>
+          </div>
+          <div class="info-item">
+            <div class="label">Email</div>
+            <div class="value"><a href="mailto:RollnTrailerRentalsNMoreLLC@gmail.com">RollnTrailerRentalsNMoreLLC@gmail.com</a></div>
+          </div>
+          <div class="info-item">
+            <div class="label">Service Area</div>
+            <div class="value">CSRA (Augusta + Surrounding)</div>
+          </div>
+          <div class="info-item">
+            <div class="label">Policy</div>
+            <div class="value">Deposits Non-Refundable</div>
+          </div>
+        </div>
+      </div>
 
-      <select name="trailer" required>
-        <option value="tilt22">22’ Tilt Deck Equipment Trailer — 14K</option>
-        <option value="car20">20’ Steel Deck Car Hauler — 7K</option>
-      </select>
+    </div>
+  </header>
 
-      <select name="term" required>
-        <option value="daily">Daily</option>
-        <option value="weekly">Weekly</option>
-      </select>
+  <main class="container">
 
-      <textarea name="notes" placeholder="Details or questions"></textarea>
+    <h3 class="section-title">Available Trailer Rentals</h3>
 
-      <button type="submit">Continue to Deposit</button>
-    </form>
+    <div class="trailers">
 
-    <p class="small">
-      Deposits are <b>non-refundable</b>. Requests are <b>pending approval</b>.
-      Balance due at pickup. Call/text <b>714-383-8539</b>.
-    </p>
-  </div>
-</section>
+      <div class="card">
+        <div class="trailer-head">
+          <h4 class="trailer-name">22’ Tilt Deck • 14K GVWR</h4>
+          <div class="price">$130/day <small>$650/week</small></div>
+        </div>
 
-  <div class="card">
-  <h2>Service Area</h2>
-  <p>Serving the CSRA area — Augusta, North Augusta, Aiken, Grovetown, Evans and surrounding areas.</p>
+        <div class="gallery" aria-label="22’ tilt deck gallery">
+          <img src="tilt1.jpeg" alt="22’ Tilt Deck photo 1" />
+          <img src="tilt2.jpeg" alt="22’ Tilt Deck photo 2" />
+          <img src="tilt3.jpeg" alt="22’ Tilt Deck photo 3" />
+          <img src="tilt4.jpeg" alt="22’ Tilt Deck photo 4" />
+        </div>
 
-  <div style="border-radius:12px;overflow:hidden;border:1px solid #222;">
-    <iframe
-      src="https://www.google.com/maps?q=Augusta,+GA&output=embed"
-      width="100%"
-      height="300"
-      style="border:0;"
-      loading="lazy">
-    </iframe>
-  </div>
-</div>
-<footer>
-  Call/Text: 714-383-8539 • RollnTrailerRentalsNMoreLLC@gmail.com • Serving the CSRA • 24/7 Rentals
-</footer>
- 
+        <p class="meta">
+          Heavy-duty tilt deck for easy loading. Great for skid steers, tractors, vehicles, and equipment.
+        </p>
+
+        <a class="btn btn-primary" href="#booking" style="width:100%;margin-top:12px;">Reserve This Trailer</a>
+      </div>
+
+      <div class="card">
+        <div class="trailer-head">
+          <h4 class="trailer-name">20’ Car Hauler • 7K GVWR</h4>
+          <div class="price">$120/day <small>$600/week</small></div>
+        </div>
+
+        <div class="gallery" aria-label="20’ car hauler gallery">
+          <img src="car1.jpeg" alt="20’ Car Hauler photo 1" />
+          <img src="car2.jpeg" alt="20’ Car Hauler photo 2" />
+          <img src="car3.jpeg" alt="20’ Car Hauler photo 3" />
+          <img src="car4.jpeg" alt="20’ Car Hauler photo 4" />
+        </div>
+
+        <p class="meta">
+          Steel deck hauler for cars/SUVs and light equipment. Easy loading and secure tie-down options.
+        </p>
+
+        <a class="btn btn-primary" href="#booking" style="width:100%;margin-top:12px;">Reserve This Trailer</a>
+      </div>
+
+    </div>
+
+    <div class="card" style="margin-top:10px;">
+      <h3 class="section-title" style="margin:0 0 10px;">Why Rent From Us?</h3>
+      <p class="meta" style="margin:0;">
+        ✔ Heavy-duty, well-maintained trailers • ✔ Fast approvals • ✔ 24/7 rentals • ✔ Secure deposits • ✔ Serving the CSRA
+      </p>
+      <p class="meta" style="margin:10px 0 0;color:var(--accent);font-weight:900;">
+        Limited availability — reserve early to guarantee your dates.
+      </p>
+    </div>
+
+    <div class="card" id="booking">
+      <h3 class="section-title" style="margin:0 0 10px;">Booking Request</h3>
+
+      <form action="deposit.html" method="GET">
+        <input name="name" placeholder="Full Name" required />
+        <input name="phone" placeholder="Phone Number" required />
+        <input name="email" type="email" placeholder="Email (optional)" />
+
+        <select name="trailer" required>
+          <option value="tilt22">22’ Tilt Deck Equipment Trailer — 14K</option>
+          <option value="car20">20’ Steel Deck Car Hauler — 7K</option>
+        </select>
+
+        <select name="term" required>
+          <option value="daily">Daily</option>
+          <option value="weekly">Weekly</option>
+        </select>
+
+        <textarea name="notes" placeholder="What are you hauling? Any special requests?"></textarea>
+
+        <button class="submit" type="submit">Continue to Deposit</button>
+      </form>
+
+      <p class="fine">
+        Deposits are <b>non-refundable</b> and required to reserve your rental dates. Requests are <b>pending approval</b>.
+        Balance is due at pickup. Questions? Call/text <b>714-383-8539</b>.
+      </p>
+    </div>
+
+    <div class="card">
+      <h3 class="section-title" style="margin:0 0 10px;">Service Area</h3>
+      <p class="meta" style="margin-top:0;">
+        Serving the CSRA area — Augusta, North Augusta, Aiken, Grovetown, Evans and surrounding areas.
+      </p>
+
+      <div class="map-wrap">
+        <iframe
+          src="https://www.google.com/maps?q=Augusta,+GA&output=embed"
+          width="100%"
+          height="320"
+          style="border:0;"
+          loading="lazy"
+          title="CSRA Service Area Map">
+        </iframe>
+      </div>
+    </div>
+
+  </main>
+
+  <footer>
+    Roll'N Trailer Rentals N More LLC • 24/7 Rentals • Serving the CSRA •
+    <a href="mailto:RollnTrailerRentalsNMoreLLC@gmail.com" style="color:var(--accent);text-decoration:none;">Email</a> •
+    <a href="tel:7143838539" style="color:var(--accent);text-decoration:none;">Call/Text 714-383-8539</a>
+  </footer>
+
+</body>
+</html>
