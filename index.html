@@ -464,8 +464,28 @@
 </style>
   </style>
 </head>
+<script>
+  // Simple multi-gallery thumbnail switcher
+  document.querySelectorAll("[data-gallery]").forEach((gallery) => {
+    const mainImg = gallery.querySelector("[data-gallery-main]");
+    const thumbs = gallery.querySelectorAll("[data-thumb]");
 
-<body>
+    thumbs.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const full = btn.getAttribute("data-full");
+        if (!full) return;
+
+        // swap main image
+        mainImg.src = full;
+
+        // active state
+        thumbs.forEach((t) => t.classList.remove("active"));
+        btn.classList.add("active");
+      });
+    });
+  });
+</script>
+  <body>
 
  <header class="hero-header">
 
