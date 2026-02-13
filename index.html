@@ -480,28 +480,31 @@
 } 
   </style>
 </head>
-<script>
-  // Simple multi-gallery thumbnail switcher
-  document.querySelectorAll("[data-gallery]").forEach((gallery) => {
-    const mainImg = gallery.querySelector("[data-gallery-main]");
-    const thumbs = gallery.querySelectorAll("[data-thumb]");
 
-    thumbs.forEach((btn) => {
-      btn.addEventListener("click", () => {
-        const full = btn.getAttribute("data-full");
-        if (!full) return;
+</html>
+﻿<script>
+document.addEventListener("DOMContentLoaded", () => {
+ document.querySelectorAll("[data-gallery]").forEach((gallery) => {
+   const mainImg = gallery.querySelector("[data-gallery-main]");
+   const thumbs = gallery.querySelectorAll("[data-thumb]");
 
-        // swap main image
-        mainImg.src = full;
+   if (!mainImg || !thumbs.length) return;
 
-        // active state
-        thumbs.forEach((t) => t.classList.remove("active"));
-        btn.classList.add("active");
-      });
-    });
-  });
+   thumbs.forEach((btn) => {
+     btn.addEventListener("click", () => {
+       const full = btn.getAttribute("data-full");
+       if (!full) return;
+
+       mainImg.src = full;
+
+       thumbs.forEach((t) => t.classList.remove("active"));
+       btn.classList.add("active");
+     });
+   });
+ });
+});
 </script>
-  <body>
+</body>
 
  <header class="hero-header">
 
