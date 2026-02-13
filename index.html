@@ -540,12 +540,35 @@
           <div class="price">$130/day <small>$650/week</small></div>
         </div>
 
-        <div class="gallery" aria-label="22’ tilt deck gallery">
-          <img src="tilt1.jpeg" alt="22’ Tilt Deck photo 1" />
-          <img src="tilt2.jpeg" alt="22’ Tilt Deck photo 2" />
-          <img src="tilt3.jpeg" alt="22’ Tilt Deck photo 3" />
-          <img src="tilt4.jpeg" alt="22’ Tilt Deck photo 4" />
-        </div>
+        <div class="gallery" data-gallery>
+  <div class="gallery-main">
+    <img
+      data-gallery-main
+      src="TILT1.jpg"
+      alt="22' Tilt Deck Trailer photo"
+      loading="lazy"
+    />
+  </div>
+
+  <div class="thumbs">
+    <button class="thumb active" type="button" data-thumb data-full="tilt1.jpeg" aria-label="View photo 1">
+      <img src="tilt1.jpeg" alt="Tilt photo 1" loading="lazy">
+    </button>
+
+    <button class="thumb" type="button" data-thumb data-full="tilt2.jpeg" aria-label="View photo 2">
+      <img src="tilt2.jpeg" alt="Tilt photo 2" loading="lazy">
+    </button>
+
+    <button class="thumb" type="button" data-thumb data-full="tilt3.jpeg" aria-label="View photo 3">
+      <img src="tilt3.jpeg" alt="Tilt photo 3" loading="lazy">
+    </button>
+
+    <button class="thumb" type="button" data-thumb data-full="tilt4.jpeg" aria-label="View photo 4">
+      <img src="tilt4.jpeg" alt="Tilt photo 4" loading="lazy">
+    </button>
+  </div>
+</div>
+
 
         <p class="meta">
           Heavy-duty tilt deck for easy loading. Great for skid steers, tractors, vehicles, and equipment.
