@@ -378,23 +378,36 @@
 .logo {
   filter: drop-shadow(0 6px 14px rgba(0,0,0,0.7));
 }
+    .header-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  flex-wrap: wrap; /* allows stacking on small screens */
+}
+
+.logo {
+  width: clamp(35px, 6vw, 55px);
+  height: auto;
+}
   </style>
 </head>
 
 <body>
 
-  <header class="hero-header">
-  <img src="Logo.png"alt= class="logo">
+ header class="hero-header">
 
-  <h1 class="business-name">
-    Roll'N Trailer Rentals N More LLC
-  </h1>
+  <div class="header-row">
+    <img src="Logo.png" alt="Roll'N Trailer Rentals logo" class="logo">
+
+    <h1 class="business-name">
+      Roll'N Trailer Rentals N More LLC
+    </h1>
+  </div>
 
   <p class="accent">
     24/7 Trailer Rentals • Serving the CSRA Area
-  </p>
-</header>
-      <div class="nav-actions">
+  </p>      <div class="nav-actions">
         <a class="btn btn-ghost" href="tel:7143838539">Call/Text</a>
         <a class="btn btn-primary" href="#booking">Book Now</a>
       </div>
