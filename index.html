@@ -477,31 +477,127 @@
 }
     @media (max-width: 600px) {
   .thumbs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-} 
+} /* --- Fullscreen image modal --- */
+.img-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.86);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+  z-index: 9999;
+}
+
+.img-modal.open {
+  display: flex;
+}
+
+.img-modal-content {
+  max-width: min(1100px, 96vw);
+  max-height: 88vh;
+  width: 100%;
+  position: relative;
+}
+
+.img-modal img {
+  width: 100%;
+  height: 100%;
+  max-height: 88vh;
+  object-fit: contain;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: #0b0b0b;
+}
+
+.img-modal-close {
+  position: absolute;
+  top: -12px;
+  right: -12px;
+  width: 42px;
+  height: 42px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.18);
+  background: rgba(20,20,20,0.95);
+  color: #fff;
+  font-size: 22px;
+  cursor: pointer;
+}
+
+.img-modal-close:focus-visible {
+  outline: 2px solid #22c55e;
+  outline-offset: 2px;
+}
+
+/* Nice cue that the main image is clickable */
+.gallery-main {
+  cursor: zoom-in;
+}
   </style>
 </head>
 
 </html>
-﻿<script>
+<div class="img-modal" id="imgModal" aria-hidden="true">
+ <div class="img-modal-content">
+   <button class="img-modal-close" id="imgModalClose" type="button" aria-label="Close">×</button>
+   <img id="imgModalImg" alt="Trailer photo zoomed" />
+ </div>
+</div>
+<script>
 document.addEventListener("DOMContentLoaded", () => {
- document.querySelectorAll("[data-gallery]").forEach((gallery) => {
-   const mainImg = gallery.querySelector("[data-gallery-main]");
-   const thumbs = gallery.querySelectorAll("[data-thumb]");
+  // --- Gallery thumb switcher ---
+  document.querySelectorAll("[data-gallery]").forEach((gallery) => {
+    const mainImg = gallery.querySelector("[data-gallery-main]");
+    const thumbs = gallery.querySelectorAll("[data-thumb]");
+    if (!mainImg || !thumbs.length) return;
 
-   if (!mainImg || !thumbs.length) return;
+    thumbs.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const full = btn.getAttribute("data-full");
+        if (!full) return;
 
-   thumbs.forEach((btn) => {
-     btn.addEventListener("click", () => {
-       const full = btn.getAttribute("data-full");
-       if (!full) return;
+        mainImg.src = full;
 
-       mainImg.src = full;
+        thumbs.forEach((t) => t.classList.remove("active"));
+        btn.classList.add("active");
+      });
+    });
+  });
 
-       thumbs.forEach((t) => t.classList.remove("active"));
-       btn.classList.add("active");
-     });
-   });
- });
+  // --- Fullscreen zoom modal ---
+  const modal = document.getElementById("imgModal");
+  const modalImg = document.getElementById("imgModalImg");
+  const closeBtn = document.getElementById("imgModalClose");
+
+  function openModal(src, alt) {
+    modalImg.src = src;
+    modalImg.alt = alt || "Trailer photo zoomed";
+    modal.classList.add("open");
+    modal.setAttribute("aria-hidden", "false");
+    document.body.style.overflow = "hidden"; // stop background scroll
+  }
+
+  function closeModal() {
+    modal.classList.remove("open");
+    modal.setAttribute("aria-hidden", "true");
+    modalImg.src = "";
+    document.body.style.overflow = "";
+  }
+
+  // Click main gallery image to open
+  document.querySelectorAll("[data-gallery-main]").forEach((img) => {
+    img.addEventListener("click", () => openModal(img.src, img.alt));
+  });
+
+  // Close actions
+  closeBtn.addEventListener("click", closeModal);
+  modal.addEventListener("click", (e) => {
+    // clicking outside the image closes
+    if (e.target === modal) closeModal();
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && modal.classList.contains("open")) closeModal();
+  });
 });
 </script>
 </body>
