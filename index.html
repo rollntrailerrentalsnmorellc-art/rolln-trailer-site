@@ -460,8 +460,21 @@
   .thumb:focus-visible {
     outline: 2px solid #22c55e;
     outline-offset: 2px;
-  }
-</style>
+  }/* Force gallery to stack vertically (main image on top, thumbs underneath) */
+.gallery {
+  display: block !important;
+}
+
+.gallery-main {
+  width: 100%;
+  margin-bottom: 10px;
+}
+
+.thumbs {
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
   </style>
 </head>
 <script>
