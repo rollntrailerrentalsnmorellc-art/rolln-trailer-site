@@ -346,18 +346,51 @@
   border: 0;
   border-radius: 12px;
   margin-top: 12px;
-}</style>
+}
+.hero-header {
+  text-align: center;
+  padding: 40px 20px;
+  background: #111;
+}
+
+.logo {
+  width: 160px;
+  max-width: 60%;
+  margin-bottom: 12px;
+}
+
+.business-name {
+  font-size: 42px;
+  margin: 0;
+  font-weight: 900;
+  letter-spacing: 1px;
+}
+
+@media (max-width: 600px) {
+  .business-name {
+    font-size: 32px;
+  }
+
+  .logo {
+    width: 120px;
+  }
+}
+</style>
 </head>
 
 <body>
 
-  <div class="topbar">
-    <div class="container topbar-inner">
-      <div class="brand">
-        <div class="badge"></div>
-        <h1>Roll'N Trailer Rentals N More LLC</h1>
-      </div>
+  <header class="hero-header">
+  <img src="logo.png" alt="Roll'N Trailer Rentals logo" class="logo">
 
+  <h1 class="business-name">
+    Roll'N Trailer Rentals N More LLC
+  </h1>
+
+  <p class="accent">
+    24/7 Trailer Rentals • Serving the CSRA Area
+  </p>
+</header>
       <div class="nav-actions">
         <a class="btn btn-ghost" href="tel:7143838539">Call/Text</a>
         <a class="btn btn-primary" href="#booking">Book Now</a>
