@@ -533,6 +533,48 @@
 .gallery-main {
   cursor: zoom-in;
 }
+    /* Smooth fade when switching main image */
+.gallery-main img {
+  transition: opacity 160ms ease;
+}
+
+/* Fullscreen modal nav arrows */
+.img-modal-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 46px;
+  height: 46px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.18);
+  background: rgba(20,20,20,0.92);
+  color: #fff;
+  font-size: 28px;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  user-select: none;
+}
+
+.img-modal-nav.prev { left: -10px; }
+.img-modal-nav.next { right: -10px; }
+
+@media (max-width: 600px) {
+  .img-modal-nav.prev { left: 6px; }
+  .img-modal-nav.next { right: 6px; }
+}
+
+/* Make nav buttons look nice on focus */
+.img-modal-nav:focus-visible,
+.img-modal-close:focus-visible {
+  outline: 2px solid #22c55e;
+  outline-offset: 2px;
+}
+
+/* Slight cue in fullscreen that image is interactive */
+.img-modal img {
+  touch-action: pan-y; /* allows vertical scroll outside, horizontal swipes handled in JS */
+}
   </style>
 </head>
 
@@ -540,41 +582,117 @@
 <div class="img-modal" id="imgModal" aria-hidden="true">
  <div class="img-modal-content">
    <button class="img-modal-close" id="imgModalClose" type="button" aria-label="Close">×</button>
+
+   <button class="img-modal-nav prev" id="imgPrev" type="button" aria-label="Previous photo">‹</button>
+   <button class="img-modal-nav next" id="imgNext" type="button" aria-label="Next photo">›</button>
+
    <img id="imgModalImg" alt="Trailer photo zoomed" />
  </div>
 </div>
 <script>
 document.addEventListener("DOMContentLoaded", () => {
-  // --- Gallery thumb switcher ---
-  document.querySelectorAll("[data-gallery]").forEach((gallery) => {
-    const mainImg = gallery.querySelector("[data-gallery-main]");
-    const thumbs = gallery.querySelectorAll("[data-thumb]");
-    if (!mainImg || !thumbs.length) return;
+  // ===== Helpers =====
+  const fadeSwap = (imgEl, newSrc) => {
+    if (!imgEl || !newSrc) return;
+    imgEl.style.opacity = "0";
+    setTimeout(() => {
+      imgEl.src = newSrc;
+      imgEl.onload = () => (imgEl.style.opacity = "1");
+    }, 120);
+  };
 
-    thumbs.forEach((btn) => {
+  const preload = (src) => {
+    if (!src) return;
+    const i = new Image();
+    i.decoding = "async";
+    i.src = src;
+  };
+
+  // ===== Build gallery state for each [data-gallery] =====
+  const galleries = [];
+  document.querySelectorAll("[data-gallery]").forEach((galleryEl) => {
+    const mainImg = galleryEl.querySelector("[data-gallery-main]");
+    const thumbBtns = Array.from(galleryEl.querySelectorAll("[data-thumb]"));
+    const images = thumbBtns.map((b) => b.getAttribute("data-full")).filter(Boolean);
+
+    if (!mainImg || images.length === 0) return;
+
+    // Ensure first thumb is active if none are
+    if (!thumbBtns.some((b) => b.classList.contains("active"))) {
+      thumbBtns[0].classList.add("active");
+      mainImg.src = images[0];
+    }
+
+    const state = { galleryEl, mainImg, thumbBtns, images };
+    galleries.push(state);
+
+    // Thumbnail click -> swap main image + active state + preload neighbors
+    thumbBtns.forEach((btn, idx) => {
       btn.addEventListener("click", () => {
         const full = btn.getAttribute("data-full");
         if (!full) return;
 
-        mainImg.src = full;
+        fadeSwap(mainImg, full);
 
-        thumbs.forEach((t) => t.classList.remove("active"));
+        thumbBtns.forEach((t) => t.classList.remove("active"));
         btn.classList.add("active");
+
+        // Preload next/prev for snappier browsing
+        preload(images[idx + 1]);
+        preload(images[idx - 1]);
       });
     });
+
+    // Click main image -> open modal
+    mainImg.addEventListener("click", () => openModalFromGallery(state));
   });
 
-  // --- Fullscreen zoom modal ---
+  // ===== Modal elements =====
   const modal = document.getElementById("imgModal");
   const modalImg = document.getElementById("imgModalImg");
   const closeBtn = document.getElementById("imgModalClose");
+  const prevBtn = document.getElementById("imgPrev");
+  const nextBtn = document.getElementById("imgNext");
 
-  function openModal(src, alt) {
+  let activeGallery = null;
+  let activeIndex = 0;
+
+  const getActiveIndexFromThumbs = (state) => {
+    const idx = state.thumbBtns.findIndex((b) => b.classList.contains("active"));
+    return idx >= 0 ? idx : 0;
+  };
+
+  const setGalleryIndex = (state, idx) => {
+    if (!state) return;
+    const max = state.images.length;
+    activeIndex = (idx + max) % max;
+
+    const src = state.images[activeIndex];
+    // Update modal
     modalImg.src = src;
-    modalImg.alt = alt || "Trailer photo zoomed";
+
+    // Update main image + thumb active state in the page
+    fadeSwap(state.mainImg, src);
+    state.thumbBtns.forEach((t) => t.classList.remove("active"));
+    if (state.thumbBtns[activeIndex]) state.thumbBtns[activeIndex].classList.add("active");
+
+    // Preload neighbors
+    preload(state.images[activeIndex + 1]);
+    preload(state.images[activeIndex - 1]);
+  };
+
+  function openModalFromGallery(state) {
+    activeGallery = state;
+    activeIndex = getActiveIndexFromThumbs(state);
+
+    modalImg.src = state.images[activeIndex];
     modal.classList.add("open");
     modal.setAttribute("aria-hidden", "false");
-    document.body.style.overflow = "hidden"; // stop background scroll
+    document.body.style.overflow = "hidden";
+
+    // Preload neighbors so arrows feel instant
+    preload(state.images[activeIndex + 1]);
+    preload(state.images[activeIndex - 1]);
   }
 
   function closeModal() {
@@ -582,22 +700,67 @@ document.addEventListener("DOMContentLoaded", () => {
     modal.setAttribute("aria-hidden", "true");
     modalImg.src = "";
     document.body.style.overflow = "";
+    activeGallery = null;
   }
 
-  // Click main gallery image to open
-  document.querySelectorAll("[data-gallery-main]").forEach((img) => {
-    img.addEventListener("click", () => openModal(img.src, img.alt));
-  });
+  function next() {
+    if (!activeGallery) return;
+    setGalleryIndex(activeGallery, activeIndex + 1);
+  }
 
-  // Close actions
+  function prev() {
+    if (!activeGallery) return;
+    setGalleryIndex(activeGallery, activeIndex - 1);
+  }
+
+  // Close button + click outside
   closeBtn.addEventListener("click", closeModal);
   modal.addEventListener("click", (e) => {
-    // clicking outside the image closes
     if (e.target === modal) closeModal();
   });
+
+  // Arrow buttons
+  nextBtn.addEventListener("click", (e) => { e.stopPropagation(); next(); });
+  prevBtn.addEventListener("click", (e) => { e.stopPropagation(); prev(); });
+
+  // Keyboard: Esc closes, arrows navigate
   document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape" && modal.classList.contains("open")) closeModal();
+    if (!modal.classList.contains("open")) return;
+    if (e.key === "Escape") closeModal();
+    if (e.key === "ArrowRight") next();
+    if (e.key === "ArrowLeft") prev();
   });
+
+  // Swipe support (mobile) in modal
+  let touchStartX = 0;
+  let touchStartY = 0;
+  let swiping = false;
+
+  modalImg.addEventListener("touchstart", (e) => {
+    if (!modal.classList.contains("open")) return;
+    const t = e.touches[0];
+    touchStartX = t.clientX;
+    touchStartY = t.clientY;
+    swiping = true;
+  }, { passive: true });
+
+  modalImg.addEventListener("touchmove", (e) => {
+    if (!swiping) return;
+    const t = e.touches[0];
+    const dx = t.clientX - touchStartX;
+    const dy = t.clientY - touchStartY;
+
+    // Only treat as swipe if mostly horizontal
+    if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.2) {
+      swiping = false;
+      if (dx < 0) next();
+      else prev();
+    }
+  }, { passive: true });
+
+  modalImg.addEventListener("touchend", () => {
+    swiping = false;
+  }, { passive: true });
 });
 </script>
 </body>
