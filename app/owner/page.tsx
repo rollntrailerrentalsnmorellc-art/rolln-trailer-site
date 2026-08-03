@@ -18,6 +18,14 @@ export default async function Owner() {
           <div className="container">
             <div className="form">
               <h1>Owner dashboard</h1>
+              <DashboardCards
+               activeTrailers={3}
+               pendingBookings={2}
+               activeRentals={1}
+               pickupsToday={1}
+               returnsToday={0}
+               revenueMonth={3250}
+               />
               <p className="muted">Sign in with the owner email to continue.</p>
               <Link className="btn" href="/login">
                 Secure Sign-In
@@ -140,6 +148,14 @@ export default async function Owner() {
             documents, and maintenance.
           </p>
 
+         <DashboardCards
+           activeTrailers={trailerResult.count ?? 0}
+           pendingBookings={pendingResult.count ?? 0}
+           activeRentals={activeResult.count ?? 0}
+           pickupsToday={pickupResult.count ?? 0}
+           returnsToday={returnResult.count ?? 0}
+           revenueMonth={0}
+        />
           <div className="portal-grid" style={{ marginTop: 24 }}>
             <div className="panel">
               <p className="muted">Active trailers</p>
