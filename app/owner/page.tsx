@@ -18,14 +18,6 @@ export default async function Owner() {
           <div className="container">
             <div className="form">
               <h1>Owner dashboard</h1>
-              <DashboardCards
-               activeTrailers={3}
-               pendingBookings={2}
-               activeRentals={1}
-               pickupsToday={1}
-               returnsToday={0}
-               revenueMonth={3250}
-               />
               <p className="muted">Sign in with the owner email to continue.</p>
               <Link className="btn" href="/login">
                 Secure Sign-In
@@ -143,6 +135,14 @@ export default async function Owner() {
         <div className="container">
           <span className="eyebrow">Private owner area</span>
           <h1>Business command center</h1>
+          <DashboardCards
+               activeTrailers={3}
+               pendingBookings={2}
+               activeRentals={1}
+               pickupsToday={1}
+               returnsToday={0}
+               revenueMonth={3250}
+               />
           <p className="muted">
             Manage bookings, fleet availability, customers, payments,
             documents, and maintenance.
