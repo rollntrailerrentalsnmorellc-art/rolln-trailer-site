@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
+import DashboardCards from '../components/DashboardCards'
 
 export const revalidate = 0
 
