@@ -156,47 +156,6 @@ export default async function Owner() {
            returnsToday={returnResult.count ?? 0}
            revenueMonth={0}
         />
-          <div className="portal-grid" style={{ marginTop: 24 }}>
-            <div className="panel">
-              <p className="muted">Active trailers</p>
-              <h2>{trailerResult.count ?? 0}</h2>
-            </div>
-
-            <div className="panel">
-              <p className="muted">Pending bookings</p>
-              <h2>{pendingResult.count ?? 0}</h2>
-            </div>
-
-            <div className="panel">
-              <p className="muted">Currently rented</p>
-              <h2>{activeResult.count ?? 0}</h2>
-            </div>
-
-            <div className="panel">
-              <p className="muted">Today’s pickups</p>
-              <h2>{pickupResult.count ?? 0}</h2>
-            </div>
-
-            <div className="panel">
-              <p className="muted">Today’s returns</p>
-              <h2>{returnResult.count ?? 0}</h2>
-            </div>
-
-            <div className="panel">
-              <p className="muted">Maintenance records</p>
-              <h2>{maintenanceResult.count ?? 0}</h2>
-            </div>
-
-            <div className="panel">
-              <p className="muted">Customer documents</p>
-              <h2>{documentResult.count ?? 0}</h2>
-            </div>
-
-            <div className="panel">
-              <p className="muted">Payment records</p>
-              <h2>{paymentResult.count ?? 0}</h2>
-            </div>
-          </div>
 
           <div
             className="panel"
