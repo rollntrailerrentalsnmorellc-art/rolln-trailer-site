@@ -15,8 +15,15 @@ type BookingRequest = {
 };
 
 function createConfirmationCode() {
-  const datePart = new Date().toISOString().slice(2, 10).replaceAll("-", "");
-  const randomPart = Math.random().toString(36).slice(2, 7).toUpperCase();
+  const datePart = new Date()
+    .toISOString()
+    .slice(2, 10)
+    .replaceAll("-", "");
+
+  const randomPart = Math.random()
+    .toString(36)
+    .slice(2, 7)
+    .toUpperCase();
 
   return `RT-${datePart}-${randomPart}`;
 }
@@ -47,14 +54,20 @@ export async function POST(request: Request) {
       !customerPhone
     ) {
       return NextResponse.json(
-        { error: "Please complete all required reservation information." },
+        {
+          error:
+            "Please complete all required reservation information.",
+        },
         { status: 400 }
       );
     }
 
     if (!agreementAccepted) {
       return NextResponse.json(
-        { error: "The reservation certification must be accepted." },
+        {
+          error:
+            "The reservation certification must be accepted.",
+        },
         { status: 400 }
       );
     }
@@ -67,14 +80,19 @@ export async function POST(request: Request) {
       Number.isNaN(returnDate.getTime())
     ) {
       return NextResponse.json(
-        { error: "The pickup or return date is invalid." },
+        {
+          error: "The pickup or return date is invalid.",
+        },
         { status: 400 }
       );
     }
 
     if (returnDate <= pickupDate) {
       return NextResponse.json(
-        { error: "The return date must be after the pickup date." },
+        {
+          error:
+            "The return date must be after the pickup date.",
+        },
         { status: 400 }
       );
     }
@@ -88,7 +106,11 @@ export async function POST(request: Request) {
         .eq("trailer_id", trailerId)
         .lt("pickup_at", returnDate.toISOString())
         .gt("return_at", pickupDate.toISOString())
-        .not("status", "in", '("cancelled","declined","completed")')
+        .in("status", [
+          "pending_payment",
+          "confirmed",
+          "active",
+        ])
         .limit(1);
 
     if (availabilityError) {
@@ -100,7 +122,10 @@ export async function POST(request: Request) {
       );
     }
 
-    if (conflictingBookings && conflictingBookings.length > 0) {
+    if (
+      conflictingBookings &&
+      conflictingBookings.length > 0
+    ) {
       return NextResponse.json(
         {
           error:
@@ -112,32 +137,39 @@ export async function POST(request: Request) {
 
     const confirmationCode = createConfirmationCode();
 
-    const { data: booking, error: bookingError } = await supabase
-      .from("bookings")
-      .insert({
-        confirmation_code: confirmationCode,
-        trailer_id: trailerId,
-        status: "pending",
-        pickup_at: pickupDate.toISOString(),
-        return_at: returnDate.toISOString(),
-        customer_name: customerName.trim(),
-        customer_email: customerEmail.trim().toLowerCase(),
-        customer_phone: customerPhone.trim(),
-        tow_vehicle: towVehicle?.trim() || null,
-        tow_rating_lbs:
-          typeof towRatingLbs === "number" && towRatingLbs > 0
-            ? towRatingLbs
-            : null,
-        intended_use: intendedUse?.trim() || null,
-        agreement_accepted_at: new Date().toISOString(),
-        agreement_version: "2026-08",
-      })
-      .select("id, confirmation_code")
-      .single();
+    const { data: booking, error: bookingError } =
+      await supabase
+        .from("bookings")
+        .insert({
+          confirmation_code: confirmationCode,
+          trailer_id: trailerId,
+          status: "pending_payment",
+          pickup_at: pickupDate.toISOString(),
+          return_at: returnDate.toISOString(),
+          customer_name: customerName.trim(),
+          customer_email: customerEmail
+            .trim()
+            .toLowerCase(),
+          customer_phone: customerPhone.trim(),
+          tow_vehicle: towVehicle?.trim() || null,
+          tow_rating_lbs:
+            typeof towRatingLbs === "number" &&
+            towRatingLbs > 0
+              ? towRatingLbs
+              : null,
+          intended_use: intendedUse?.trim() || null,
+          agreement_accepted_at:
+            new Date().toISOString(),
+          agreement_version: "2026-08",
+        })
+        .select("id, confirmation_code")
+        .single();
 
     if (bookingError) {
       return NextResponse.json(
-        { error: `Unable to create reservation: ${bookingError.message}` },
+        {
+          error: `Unable to create reservation: ${bookingError.message}`,
+        },
         { status: 500 }
       );
     }
@@ -146,14 +178,22 @@ export async function POST(request: Request) {
       {
         success: true,
         bookingId: booking.id,
-        confirmationCode: booking.confirmation_code,
+        confirmationCode:
+          booking.confirmation_code,
       },
       { status: 201 }
     );
-  } catch {
+  } catch (error) {
+    console.error("Booking API error:", error);
+
     return NextResponse.json(
-      { error: "Invalid reservation request." },
-      { status: 400 }
+      {
+        error:
+          error instanceof Error
+            ? error.message
+            : "Invalid reservation request.",
+      },
+      { status: 500 }
     );
   }
 }
