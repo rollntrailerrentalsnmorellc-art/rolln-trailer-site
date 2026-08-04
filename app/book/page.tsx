@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
 
 function formatSelectedDate(value: string | null) {
@@ -18,7 +18,7 @@ function formatSelectedDate(value: string | null) {
   }).format(date);
 }
 
-export default function BookingPage() {
+function BookingForm() {
   const searchParams = useSearchParams();
 
   const trailerId = searchParams.get("trailerId");
@@ -370,5 +370,24 @@ export default function BookingPage() {
         </div>
       </section>
     </main>
+  );
+}
+export default function BookingPage() {
+  return (
+    <Suspense
+      fallback={
+        <main>
+          <section>
+            <div className="container">
+              <div className="notice">
+                <h1>Loading reservation…</h1>
+              </div>
+            </div>
+          </section>
+        </main>
+      }
+    >
+      <BookingForm />
+    </Suspense>
   );
 }
