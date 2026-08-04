@@ -1,12 +1,95 @@
-'use client';
-import {useState} from 'react';
-import {createClient} from '@/lib/supabase/client';
+"use client";
 
-export default function Login(){
- const [email,setEmail]=useState(''); const [message,setMessage]=useState('');
- async function send(e:React.FormEvent){e.preventDefault();setMessage('Sending secure link…');const supabase=createClient();
-  const {error}=await supabase.auth.signInWithOtp({email,options:{emailRedirectTo:`${location.origin}/auth/callback?next=/owner`}});
-  setMessage(error?error.message:'Check your email for your secure sign-in link.');
- }
- return <main><section><div className="container"><form className="form" onSubmit={send}><span className="eyebrow">No password needed</span><h1>Customer sign-in</h1><p className="muted">Enter the email used for your rental. We will send a secure sign-in link.</p><label>Email address<input value={email} onChange={e=>setEmail(e.target.value)} type="email" required/></label><button className="btn" type="submit">Email Secure Link</button><p className="result">{message}</p></form></div></section></main>
+import { FormEvent, useState } from "react";
+import { useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
+
+export default function Login() {
+  const router = useRouter();
+
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [message, setMessage] = useState("");
+  const [signingIn, setSigningIn] = useState(false);
+
+  async function signIn(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    setSigningIn(true);
+    setMessage("");
+
+    const supabase = createClient();
+
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (error) {
+      setMessage(error.message);
+      setSigningIn(false);
+      return;
+    }
+
+    router.push("/owner");
+    router.refresh();
+  }
+
+  return (
+    <main>
+      <section>
+        <div className="container">
+          <form
+            className="form"
+            onSubmit={signIn}
+            style={{
+              width: "100%",
+              maxWidth: 520,
+              margin: "0 auto",
+            }}
+          >
+            <span className="eyebrow">Private owner access</span>
+
+            <h1>Owner sign-in</h1>
+
+            <p className="muted">
+              Sign in with your authorized owner email and password.
+            </p>
+
+            <label htmlFor="email">Email address</label>
+
+            <input
+              id="email"
+              type="email"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              required
+              autoComplete="email"
+            />
+
+            <label htmlFor="password">Password</label>
+
+            <input
+              id="password"
+              type="password"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              required
+              autoComplete="current-password"
+            />
+
+            <button className="btn" type="submit" disabled={signingIn}>
+              {signingIn ? "Signing In…" : "Sign In"}
+            </button>
+
+            {message && (
+              <div className="notice" style={{ marginTop: 16 }}>
+                {message}
+              </div>
+            )}
+          </form>
+        </div>
+      </section>
+    </main>
+  );
 }

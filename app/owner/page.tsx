@@ -19,7 +19,7 @@ export default async function Owner() {
             <div className="form">
               <h1>Owner dashboard</h1>
               <p className="muted">Sign in with the owner email to continue.</p>
-              <Link className="btn" href="/owner/login">
+              <Link className="btn" href="/login">
                 Secure Sign-In
               </Link>
             </div>
