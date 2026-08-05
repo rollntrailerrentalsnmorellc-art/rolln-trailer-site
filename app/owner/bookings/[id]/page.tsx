@@ -373,8 +373,9 @@ export default async function BookingDetailsPage({ params }: PageProps) {
             className="panel"
             style={{
               marginTop: 18,
+              width: "100%",
               display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))",
+              gridTemplateColumns: "repeat(4, 1fr)",
               gap: 12,
             }}
           >
