@@ -370,45 +370,56 @@ export default async function BookingDetailsPage({ params }: PageProps) {
           </div>
 
           <div
-            className="panel"
+            className="panel1"
             style={{
               marginTop: 18,
               width: "100%",
               display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
+              gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
               gap: 12,
-            }}
+  }}
+>
+           <form action={approveBooking} style={{ width: "100%" }}>
+             <button
+               className="btn"
+               type="submit"
+               style={{ width: "100%" }}
           >
-            <form action={approveBooking} style={{ width: "100%" }}>            
-              <button 
-                className="btn" 
-                type="submit" 
-                style={{ width: "100%"}}
-              >
-                Approve
-              </button>
-            </form>
-            <form action={declineBooking} style={{ width: "100%" }}>
-              <button 
-                className="btn secondary" 
-                type="submit"
-                style={{ width: "100%" }}
-              >
-                Decline
-              </button>
-            </form>
-            <form action={markPickedUp} style={{ width: "100%" }}>
-              <button className="btn secondary" type="submit">
-                Mark Picked Up
-              </button>
+               Approve
+             </button>
             </form>
 
-            <form action={markReturned} style={{ width: "100%" }}>
-              <button className="btn secondary" type="submit">
-                Mark Returned
-              </button>
-            </form>
-          </div>
+          <form action={declineBooking} style={{ width: "100%" }}>
+           <button
+            className="btn secondary"
+            type="submit"
+            style={{ width: "100%" }}
+    >
+      Decline
+    </button>
+  </form>
+
+  <form action={markPickedUp} style={{ width: "100%" }}>
+    <button
+      className="btn secondary"
+      type="submit"
+      style={{ width: "100%" }}
+    >
+      Mark Picked Up
+    </button>
+  </form>
+
+  <form action={markReturned} style={{ width: "100%" }}>
+    <button
+      className="btn secondary"
+      type="submit"
+      style={{ width: "100%" }}
+    >
+      Mark Returned
+    </button>
+  </form>
+</div>
+
         </div>
       </section>
     </main>
