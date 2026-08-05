@@ -52,6 +52,73 @@ export default async function BookingDetailsPage({ params }: PageProps) {
 
     redirect(`/owner/bookings/${id}`);
   }
+  async function declineBooking() {
+    "use server";
+    
+    const supabase = createAdminClient();
+
+    const { error } = await supabase
+     .from("bookings")
+     .update({ status: "cancelled" })
+    .eq("id", id);
+
+  if (error) {
+    throw new Error(`Unable to mark picked up: ${error.message}`);
+  }
+
+  revalidatePath(`/owner/bookings/${id}`);
+  revalidatePath("/owner/bookings");
+  revalidatePath("/owner");
+
+  redirect(`/owner/bookings/${id}`);
+}
+
+  async function markPickedUp() {
+  "use server";
+
+   const supabase = createAdminClient();
+
+   const { error } = await supabase
+      .from("bookings")
+      .update({ 
+        status: "picked_up",
+        pickup_at: new Date().toISOString(),
+      })
+      .eq("id", id);
+
+    if (error) {
+      throw new Error(`Unable to mark picked up: ${error.message}`);
+    }
+
+    revalidatePath(`/owner/bookings/${id}`);
+    revalidatePath("/owner/bookings");
+    revalidatePath("/owner");
+
+    redirect(`/owner/bookings/${id}`);
+  }
+  async function markReturned() {
+  "use server";
+
+  const supabase = createAdminClient();
+
+  const { error } = await supabase
+    .from("bookings")
+    .update({
+      status: "completed",
+      completed_at: new Date().toISOString(),
+    })
+    .eq("id", id);
+
+  if (error) {
+    throw new Error(`Unable to mark returned: ${error.message}`);
+  }
+
+  revalidatePath(`/owner/bookings/${id}`);
+  revalidatePath("/owner/bookings");
+  revalidatePath("/owner");
+
+  redirect(`/owner/bookings/${id}`);
+}
 
   const supabase = await createClient();
 
@@ -321,17 +388,26 @@ export default async function BookingDetailsPage({ params }: PageProps) {
                 Approve
               </button>
             </form>
-            <button className="btn secondary" type="button">
-              Decline
-            </button>
+            <form action={declineBooking} style={{ width: "100%" }}>
+              <button 
+                className="btn secondary" 
+                type="submit"
+                style={{ width: "100%" }}
+              >
+                Decline
+              </button>
+            </form>
+            <form action={markPickedUp} style={{ width: "100%" }}>
+              <button className="btn secondary" type="submit">
+                Mark Picked Up
+              </button>
+            </form>
 
-            <button className="btn secondary" type="button">
-              Mark Picked Up
-            </button>
-
-            <button className="btn secondary" type="button">
-              Mark Returned
-            </button>
+            <form action={markReturned} style={{ width: "100%" }}>
+              <button className="btn secondary" type="submit">
+                Mark Returned
+              </button>
+            </form>
           </div>
         </div>
       </section>
