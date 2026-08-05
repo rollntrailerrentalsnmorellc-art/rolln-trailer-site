@@ -29,12 +29,12 @@ function BookingForm() {
   const [message, setMessage] = useState("");
 
   async function submitBooking(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+    const form = event.currentTarget;
 
     setSubmitting(true);
     setMessage("");
 
-    const formData = new FormData(event.currentTarget);
+    const formData = new FormData(form);
 
     const bookingData = {
       trailerId,
@@ -80,7 +80,7 @@ function BookingForm() {
         `Reservation submitted successfully. Confirmation: ${result.confirmationCode}`
       );
 
-      event.currentTarget.reset();
+      form.reset();
     } catch {
       setMessage("Unable to submit your reservation. Please try again.");
     } finally {
