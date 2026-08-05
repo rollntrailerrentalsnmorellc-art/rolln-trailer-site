@@ -1,7 +1,7 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
+import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export const revalidate = 0;
@@ -31,27 +31,29 @@ function formatMoney(cents: number | null) {
 
 export default async function BookingDetailsPage({ params }: PageProps) {
   const { id } = await params;
+
   async function approveBooking() {
-  "use server";
+    "use server";
 
-  const supabase = createAdminClient();
+    const supabase = createAdminClient();
 
-  const { error } = await supabase
-    .from("bookings")
-    .update({ status: "confirmed" })
-    .eq("id", id);
+    const { error } = await supabase
+      .from("bookings")
+      .update({ status: "confirmed" })
+      .eq("id", id);
 
-  if (error) {
-    throw new Error(`Unable to approve booking: ${error.message}`);
+    if (error) {
+      throw new Error(`Unable to approve booking: ${error.message}`);
+    }
+
+    revalidatePath(`/owner/bookings/${id}`);
+    revalidatePath("/owner/bookings");
+    revalidatePath("/owner");
+
+    redirect(`/owner/bookings/${id}`);
   }
 
-  revalidatePath(`/owner/bookings/${id}`);
-  revalidatePath("/owner/bookings");
-  revalidatePath("/owner");
-
-  redirect(`/owner/bookings/${id}`);
-}
-  const supabase = await createAdminClient();
+  const supabase = await createClient();
 
   const {
     data: { user },
