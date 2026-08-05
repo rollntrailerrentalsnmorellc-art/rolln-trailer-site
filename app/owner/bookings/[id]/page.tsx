@@ -312,8 +312,12 @@ export default async function BookingDetailsPage({ params }: PageProps) {
               gap: 12,
             }}
           >
-            <form action={approveBooking}>
-              <button className="btn" type="button">
+            <form action={approveBooking} style={{ width: "100%" }}>            
+              <button 
+                className="btn" 
+                type="submit" 
+                style={{ width: "100%"}}
+              >
                 Approve
               </button>
             </form>
