@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export const revalidate = 0;
 
@@ -29,7 +31,27 @@ function formatMoney(cents: number | null) {
 
 export default async function BookingDetailsPage({ params }: PageProps) {
   const { id } = await params;
-  const supabase = await createClient();
+  async function approveBooking() {
+  "use server";
+
+  const supabase = createAdminClient();
+
+  const { error } = await supabase
+    .from("bookings")
+    .update({ status: "confirmed" })
+    .eq("id", id);
+
+  if (error) {
+    throw new Error(`Unable to approve booking: ${error.message}`);
+  }
+
+  revalidatePath(`/owner/bookings/${id}`);
+  revalidatePath("/owner/bookings");
+  revalidatePath("/owner");
+
+  redirect(`/owner/bookings/${id}`);
+}
+  const supabase = await createAdminClient();
 
   const {
     data: { user },
@@ -288,10 +310,11 @@ export default async function BookingDetailsPage({ params }: PageProps) {
               gap: 12,
             }}
           >
-            <button className="btn" type="button">
-              Approve
-            </button>
-
+            <form action={approveBooking}>
+              <button className="btn" type="button">
+                Approve
+              </button>
+            </form>
             <button className="btn secondary" type="button">
               Decline
             </button>
