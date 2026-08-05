@@ -379,21 +379,25 @@ export default async function BookingDetailsPage({ params }: PageProps) {
               gap: 12,
             }}
           >
-            {booking.status === "pending" && (
-              <>
-                <form action={approveBooking} style={{ width: "100%" }}>
-                  <button className="btn" type="submit" style={{ width: "100%" }}>
-                    Approve
-                  </button>
-                </form>
+           {["pending", "pending_payment"].includes(booking.status) && (
+  <>
+    <form action={approveBooking} style={{ width: "100%" }}>
+      <button className="btn" type="submit" style={{ width: "100%" }}>
+        Approve
+      </button>
+    </form>
 
-                <form action={declineBooking} style={{ width: "100%" }}>
-                  <button className="btn secondary" type="submit" style={{ width: "100%" }}>
-                    Decline
-                  </button>
-                </form>
-              </>
-            )}
+    <form action={declineBooking} style={{ width: "100%" }}>
+      <button
+        className="btn secondary"
+        type="submit"
+        style={{ width: "100%" }}
+      >
+        Decline
+      </button>
+    </form>
+  </>
+)}
 
             {booking.status === "confirmed" && (
               <form action={markPickedUp} style={{ width: "100%" }}>
