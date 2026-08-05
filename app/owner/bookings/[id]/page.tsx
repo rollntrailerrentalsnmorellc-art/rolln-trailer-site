@@ -403,7 +403,7 @@ export default async function BookingDetailsPage({ params }: PageProps) {
               </form>
             )}
 
-            {booking.status === "picked_up" && (
+            {booking.status === "active" && (
               <form action={markReturned} style={{ width: "100%" }}>
                 <button className="btn secondary" type="submit" style={{ width: "100%" }}>
                   Mark Returned
@@ -411,7 +411,7 @@ export default async function BookingDetailsPage({ params }: PageProps) {
               </form>
             )}
 
-            {booking.status === "returned" && (
+            {booking.status === "completed" && (
               <div
                 style={{
                   padding: 14,
@@ -426,7 +426,7 @@ export default async function BookingDetailsPage({ params }: PageProps) {
               </div>
             )}
 
-            {booking.status === "declined" && (
+            {booking.status === "cancelled" && (
               <div
                 style={{
                   padding: 14,
