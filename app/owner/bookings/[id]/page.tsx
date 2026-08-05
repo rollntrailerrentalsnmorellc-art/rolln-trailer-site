@@ -377,49 +377,70 @@ export default async function BookingDetailsPage({ params }: PageProps) {
               display: "grid",
               gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
               gap: 12,
-  }}
->
-           <form action={approveBooking} style={{ width: "100%" }}>
-             <button
-               className="btn"
-               type="submit"
-               style={{ width: "100%" }}
+            }}
           >
-               Approve
-             </button>
-            </form>
+            {booking.status === "pending" && (
+              <>
+                <form action={approveBooking} style={{ width: "100%" }}>
+                  <button className="btn" type="submit" style={{ width: "100%" }}>
+                    Approve
+                  </button>
+                </form>
 
-          <form action={declineBooking} style={{ width: "100%" }}>
-           <button
-            className="btn secondary"
-            type="submit"
-            style={{ width: "100%" }}
-    >
-      Decline
-    </button>
-  </form>
+                <form action={declineBooking} style={{ width: "100%" }}>
+                  <button className="btn secondary" type="submit" style={{ width: "100%" }}>
+                    Decline
+                  </button>
+                </form>
+              </>
+            )}
 
-  <form action={markPickedUp} style={{ width: "100%" }}>
-    <button
-      className="btn secondary"
-      type="submit"
-      style={{ width: "100%" }}
-    >
-      Mark Picked Up
-    </button>
-  </form>
+            {booking.status === "confirmed" && (
+              <form action={markPickedUp} style={{ width: "100%" }}>
+                <button className="btn secondary" type="submit" style={{ width: "100%" }}>
+                  Mark Picked Up
+                </button>
+              </form>
+            )}
 
-  <form action={markReturned} style={{ width: "100%" }}>
-    <button
-      className="btn secondary"
-      type="submit"
-      style={{ width: "100%" }}
-    >
-      Mark Returned
-    </button>
-  </form>
-</div>
+            {booking.status === "picked_up" && (
+              <form action={markReturned} style={{ width: "100%" }}>
+                <button className="btn secondary" type="submit" style={{ width: "100%" }}>
+                  Mark Returned
+                </button>
+              </form>
+            )}
 
+            {booking.status === "returned" && (
+              <div
+                style={{
+                  padding: 14,
+                  textAlign: "center",
+                  borderRadius: 8,
+                  background: "#1f2937",
+                  color: "#10b981",
+                  fontWeight: 700,
+                }}
+              >
+                ✓ Rental Completed
+              </div>
+            )}
+
+            {booking.status === "declined" && (
+              <div
+                style={{
+                  padding: 14,
+                  textAlign: "center",
+                  borderRadius: 8,
+                  background: "#1f2937",
+                  color: "#ef4444",
+                  fontWeight: 700,
+                }}
+              >
+                Booking Declined
+              </div>
+            )}
+          </div>
         </div>
       </section>
     </main>
