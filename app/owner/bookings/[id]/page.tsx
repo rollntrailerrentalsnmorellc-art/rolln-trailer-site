@@ -81,8 +81,7 @@ export default async function BookingDetailsPage({ params }: PageProps) {
    const { error } = await supabase
       .from("bookings")
       .update({ 
-        status: "picked_up",
-        pickup_at: new Date().toISOString(),
+        status: "active",
       })
       .eq("id", id);
 
