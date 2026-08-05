@@ -29,6 +29,8 @@ function BookingForm() {
   const [message, setMessage] = useState("");
 
   async function submitBooking(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    
     const form = event.currentTarget;
 
     setSubmitting(true);
