@@ -71,35 +71,86 @@ export default async function BookingDetailsPage({ params }: PageProps) {
     const { error: emailError } = await resend.emails.send({
   from: "Roll'N Trailer Rentals <bookings@rollntrailerrentals.com>",
   to: [currentBooking.customer_email],
-  replyTo: "jaredm0823@gmail.com",
+  replyTo: "Rollntrailerrentalsnmorellc@gmail.com",
   subject: `Your trailer rental is approved — ${currentBooking.confirmation_code}`,
   html: `
-    <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #111827;">
-      <h2 style="color: #16a34a;">Your rental request has been approved</h2>
+  <div style="margin:0; padding:24px; background:#f3f4f6; font-family:Arial,Helvetica,sans-serif; color:#17202a;">
+    <div style="max-width:620px; margin:0 auto; background:#ffffff; border-radius:14px; overflow:hidden; border:1px solid #dfe5e8;">
 
-      <p>Hello ${currentBooking.customer_name},</p>
+      <div style="background:#101814; padding:28px 24px; text-align:center;">
+        <div style="font-size:24px; font-weight:800; color:#ffffff;">
+          Roll'N Trailer Rentals N More LLC
+        </div>
+        <div style="margin-top:7px; color:#39e58c; font-size:14px; font-weight:700;">
+          Rental Request Approved
+        </div>
+      </div>
 
-      <p>
-        Your reservation with Roll'N Trailer Rentals N More LLC has been approved.
-      </p>
+      <div style="padding:30px 26px;">
+        <h2 style="margin:0 0 18px; color:#168f55; font-size:25px;">
+          Your rental request has been approved!
+        </h2>
 
-      <p>
-        <strong>Confirmation:</strong> ${currentBooking.confirmation_code}<br />
-        <strong>Pickup:</strong> ${formatDate(currentBooking.pickup_at)}<br />
-        <strong>Return:</strong> ${formatDate(currentBooking.return_at)}
-      </p>
+        <p style="font-size:16px; line-height:1.6; margin:0 0 16px;">
+          Hello ${currentBooking.customer_name},
+        </p>
 
-      <p>
-        We will contact you with any remaining payment or pickup instructions.
-      </p>
+        <p style="font-size:16px; line-height:1.6; margin:0 0 24px;">
+          Your reservation with Roll'N Trailer Rentals N More LLC has been approved.
+          Please keep the confirmation information below for your records.
+        </p>
 
-      <p>
-        Thank you,<br />
-        <strong>Roll'N Trailer Rentals N More LLC</strong><br />
-        706-699-6990
-      </p>
+        <div style="background:#f6faf8; border:1px solid #cfe9dc; border-radius:10px; padding:20px; margin-bottom:24px;">
+          <div style="margin-bottom:13px;">
+            <span style="font-weight:700;">Confirmation number:</span><br>
+            <span style="font-size:20px; font-weight:800; color:#168f55;">
+              ${currentBooking.confirmation_code}
+            </span>
+          </div>
+
+          <div style="margin-bottom:11px;">
+            <strong>Pickup:</strong>
+            ${formatDate(currentBooking.pickup_at)}
+          </div>
+
+          <div>
+            <strong>Return:</strong>
+            ${formatDate(currentBooking.return_at)}
+          </div>
+        </div>
+
+        <p style="font-size:15px; line-height:1.6; margin:0 0 24px;">
+          We will contact you with any remaining payment details or pickup instructions.
+        </p>
+
+        <div style="text-align:center; margin:28px 0;">
+          <a
+            href="https://rollntrailerrentals.com"
+            style="display:inline-block; background:#18d978; color:#07140e; text-decoration:none; font-weight:800; padding:14px 24px; border-radius:9px;"
+          >
+            Visit Our Website
+          </a>
+        </div>
+
+        <div style="border-top:1px solid #e4e7e9; padding-top:20px; font-size:14px; line-height:1.7;">
+          <strong>Roll'N Trailer Rentals N More LLC</strong><br>
+          Call or text:
+          <a href="tel:+17066996990" style="color:#168f55; font-weight:700; text-decoration:none;">
+            706-699-6990
+          </a><br>
+          <a href="https://rollntrailerrentals.com" style="color:#168f55; text-decoration:none;">
+            rollntrailerrentals.com
+          </a>
+        </div>
+      </div>
+
+      <div style="background:#101814; color:#b9c5bf; text-align:center; padding:16px; font-size:12px;">
+        Serving Augusta, Evans, Grovetown, North Augusta, Aiken and the CSRA.
+      </div>
+
     </div>
-  `,
+  </div>
+`,
 });
 
 if (emailError) {
