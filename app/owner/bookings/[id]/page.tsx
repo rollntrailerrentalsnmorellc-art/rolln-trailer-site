@@ -103,7 +103,7 @@ export default async function BookingDetailsPage({ params }: PageProps) {
 });
 
 if (emailError) {
-  throw new Error(`Booking approved, but email failed: ${emailError.message}`);
+  console.error("Approval email failed:", emailError);
 }
 
     revalidatePath(`/owner/bookings/${id}`);
