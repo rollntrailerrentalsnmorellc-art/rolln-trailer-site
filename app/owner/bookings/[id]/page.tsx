@@ -96,7 +96,7 @@ export default async function BookingDetailsPage({ params }: PageProps) {
       <p>
         Thank you,<br />
         <strong>Roll'N Trailer Rentals N More LLC</strong><br />
-        706-526-2856
+        706-699-6990
       </p>
     </div>
   `,
