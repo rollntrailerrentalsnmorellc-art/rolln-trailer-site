@@ -3,7 +3,8 @@ import { notFound, redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-
+import { Resend } from "resend";
+const resend = new Resend(process.env.RESEND_API_KEY);
 export const revalidate = 0;
 
 type PageProps = {
@@ -35,6 +36,11 @@ export default async function BookingDetailsPage({ params }: PageProps) {
   async function approveBooking() {
     "use server";
 
+    const currentBooking = booking;
+
+    if (!currentBooking) {
+      throw new Error("Booking not found");
+    }
     const supabase = createAdminClient();
 
     const { error } = await supabase
@@ -45,6 +51,44 @@ export default async function BookingDetailsPage({ params }: PageProps) {
     if (error) {
       throw new Error(`Unable to approve booking: ${error.message}`);
     }
+
+    const { error: emailError } = await resend.emails.send({
+  from: "Roll'N Trailer Rentals <bookings@rollntrailerrentals.com>",
+  to: [currentBooking.customer_email],
+  replyTo: "jaredm0823@gmail.com",
+  subject: `Your trailer rental is approved — ${currentBooking.confirmation_code}`,
+  html: `
+    <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #111827;">
+      <h2 style="color: #16a34a;">Your rental request has been approved</h2>
+
+      <p>Hello ${currentBooking.customer_name},</p>
+
+      <p>
+        Your reservation with Roll'N Trailer Rentals N More LLC has been approved.
+      </p>
+
+      <p>
+        <strong>Confirmation:</strong> ${currentBooking.confirmation_code}<br />
+        <strong>Pickup:</strong> ${formatDate(currentBooking.pickup_at)}<br />
+        <strong>Return:</strong> ${formatDate(currentBooking.return_at)}
+      </p>
+
+      <p>
+        We will contact you with any remaining payment or pickup instructions.
+      </p>
+
+      <p>
+        Thank you,<br />
+        <strong>Roll'N Trailer Rentals N More LLC</strong><br />
+        706-526-2856
+      </p>
+    </div>
+  `,
+});
+
+if (emailError) {
+  throw new Error(`Booking approved, but email failed: ${emailError.message}`);
+}
 
     revalidatePath(`/owner/bookings/${id}`);
     revalidatePath("/owner/bookings");
