@@ -34,23 +34,39 @@ export default async function BookingDetailsPage({ params }: PageProps) {
   const { id } = await params;
 
   async function approveBooking() {
-    "use server";
+  "use server";
 
-    const currentBooking = booking;
+  const supabase = createAdminClient();
 
-    if (!currentBooking) {
-      throw new Error("Booking not found");
-    }
-    const supabase = createAdminClient();
+  const { data: currentBooking, error: bookingError } = await supabase
+    .from("bookings")
+    .select(
+      `
+      id,
+      customer_email,
+      customer_name,
+      confirmation_code,
+      pickup_at,
+      return_at
+      `
+    )
+    .eq("id", id)
+    .single();
 
-    const { error } = await supabase
-      .from("bookings")
-      .update({ status: "confirmed" })
-      .eq("id", id);
+  if (bookingError || !currentBooking) {
+    throw new Error(
+      `Unable to load booking: ${bookingError?.message || "Booking not found"}`
+    );
+  }
 
-    if (error) {
-      throw new Error(`Unable to approve booking: ${error.message}`);
-    }
+  const { error } = await supabase
+    .from("bookings")
+    .update({ status: "confirmed" })
+    .eq("id", id);
+
+  if (error) {
+    throw new Error(`Unable to approve booking: ${error.message}`);
+  }
 
     const { error: emailError } = await resend.emails.send({
   from: "Roll'N Trailer Rentals <bookings@rollntrailerrentals.com>",
