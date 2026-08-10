@@ -50,7 +50,7 @@ function statusColor(status: string) {
   const normalizedStatus = status.toLowerCase();
 
   if (normalizedStatus.includes("pending")) return "#f59e0b";
-  if (normalizedStatus.includes("confirm")) return "#16a34a";
+  if (normalizedStatus.includes("confirm")) return "#7DFB00";
   if (normalizedStatus.includes("active")) return "#0ea5e9";
   if (normalizedStatus.includes("complete")) return "#64748b";
   if (normalizedStatus.includes("cancel")) return "#ef4444";

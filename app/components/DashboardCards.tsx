@@ -19,7 +19,7 @@ export default function DashboardCards({
     {
       title: "Active Trailers",
       value: activeTrailers,
-      color: "#16a34a",
+      color: "#7DFB00",
     },
     {
       title: "Pending Bookings",
