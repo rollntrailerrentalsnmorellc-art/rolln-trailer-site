@@ -176,7 +176,16 @@ export async function POST(request: Request) {
         { status: 500 }
       );
     }
-   const { error: emailError } = await resend.emails.send({
+   const { data: trailer, error: trailerError } = await supabase
+  .from("trailers")
+  .select("name")
+  .eq("id", trailerId)
+  .single();
+
+if (trailerError) {
+  console.error("Unable to load trailer:", trailerError);
+}
+    const { error: emailError } = await resend.emails.send({
   from: "Roll'N Trailer Rentals <bookings@rollntrailerrentals.com>",
   to: [customerEmail.trim().toLowerCase()],
   replyTo: "Rollntrailerrentalsnmorellc@gmail.com",
@@ -216,7 +225,8 @@ export async function POST(request: Request) {
             border-radius:8px;
             margin:24px 0;
           ">
-            <strong style="color:#7DFB00;">Rental Requested</strong><br><br>
+            <strong style="color:#7DFB00;">Rental Requested</strong><br>
+            ${trailer?.name ?? "Trailer"}<br><br>
 
             <strong>Pickup:</strong>
             ${new Intl.DateTimeFormat("en-US", {
