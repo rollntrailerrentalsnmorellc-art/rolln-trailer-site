@@ -47,9 +47,9 @@ export default async function BookingDetailsPage({ params }: PageProps) {
       customer_name,
       confirmation_code,
       pickup_at,
-      return_at
-      `
-    )
+      return_at,
+      trailer_id
+      `)
     .eq("id", id)
     .single();
 
@@ -58,6 +58,15 @@ export default async function BookingDetailsPage({ params }: PageProps) {
       `Unable to load booking: ${bookingError?.message || "Booking not found"}`
     );
   }
+  const { data: trailer, error: trailerError } = await supabase
+  .from("trailers")
+  .select("name")
+  .eq("id", currentBooking.trailer_id)
+  .single();
+
+if (trailerError) {
+  console.error("Unable to load trailer:", trailerError);
+}
 
   const { error } = await supabase
     .from("bookings")
@@ -87,7 +96,7 @@ export default async function BookingDetailsPage({ params }: PageProps) {
       </div>
 
       <div style="padding:30px 26px;">
-        <h2 style="margin:0 0 18px; color:#168f55; font-size:25px;">
+        <h2 style="margin:0 0 18px; color:#7DFB00; font-size:25px;">
           Your rental request has been approved!
         </h2>
 
@@ -98,12 +107,25 @@ export default async function BookingDetailsPage({ params }: PageProps) {
         <p style="font-size:16px; line-height:1.6; margin:0 0 24px;">
           Your reservation with Roll'N Trailer Rentals N More LLC has been approved.
           Please keep the confirmation information below for your records.
+          <div style="
+background:#111827;
+color:#ffffff;
+border-left:6px solid #7DFB00;
+padding:16px 20px;
+border-radius:8px;
+margin:24px 0;
+">
+<strong style="color:#7DFB00;">Trailer Reserved</strong><br>
+${trailer?.name || "Not assigned"}<br>
+Pickup: ${formatDate(currentBooking.pickup_at)}<br>
+Return: ${formatDate(currentBooking.return_at)}
+</div>
         </p>
 
-        <div style="background:#f6faf8; border:1px solid #cfe9dc; border-radius:10px; padding:20px; margin-bottom:24px;">
+        <div style="background:#FFFFFF; border:2px solid #7DFB00; border-radius:12px; box-shadow:0 6px 16px rgba(0,0,0,.08); margin-bottom:24px;">
           <div style="margin-bottom:13px;">
             <span style="font-weight:700;">Confirmation number:</span><br>
-            <span style="font-size:20px; font-weight:800; color:#168f55;">
+            <span style="font-size:20px; font-weight:800; color:#7DFB00;">
               ${currentBooking.confirmation_code}
             </span>
           </div>
@@ -120,25 +142,44 @@ export default async function BookingDetailsPage({ params }: PageProps) {
         </div>
 
         <p style="font-size:15px; line-height:1.6; margin:0 0 24px;">
-          We will contact you with any remaining payment details or pickup instructions.
+          We will contact you soon with your pickup location and any remaining payment information
+          Please Bring:
+          - A valid driver's license
+          - Proof of insurance for the tow vehicle
+          - The tow vehicle listed on your reservation
+          - Arrive at your scheduled pickup time
+          - Call or text us if your plans change
+          - Questions? Call or text us at 706-699-6990
+        </p>
+          <h3 style="color:#7DFB00;margin-top:30px;">
+Next Steps
+</h3>
+
+<ul style="line-height:1.8;padding-left:20px;">
+  <li>Bring a valid driver's license.</li>
+  <li>Bring proof of insurance for the tow vehicle.</li>
+  <li>Bring the tow vehicle listed on your reservation.</li>
+  <li>Arrive at your scheduled pickup time.</li>
+  <li>Call or text us if your plans change.</li>
+</ul>
         </p>
 
         <div style="text-align:center; margin:28px 0;">
           <a
             href="https://rollntrailerrentals.com"
-            style="display:inline-block; background:#18d978; color:#07140e; text-decoration:none; font-weight:800; padding:14px 24px; border-radius:9px;"
+            style="display:inline-block; background:#7DFB00; color:#111827; text-decoration:none; font-weight:800; padding:14px 24px; border-radius:9px;"
           >
-            Visit Our Website
+            View Reservation
           </a>
         </div>
 
         <div style="border-top:1px solid #e4e7e9; padding-top:20px; font-size:14px; line-height:1.7;">
           <strong>Roll'N Trailer Rentals N More LLC</strong><br>
           Call or text:
-          <a href="tel:+17066996990" style="color:#168f55; font-weight:700; text-decoration:none;">
+          <a href="tel:+17066996990" style="color:#7DFB00; font-weight:700; text-decoration:none;">
             706-699-6990
           </a><br>
-          <a href="https://rollntrailerrentals.com" style="color:#168f55; text-decoration:none;">
+          <a href="https://rollntrailerrentals.com" style="color:#7DFB00; text-decoration:none;">
             rollntrailerrentals.com
           </a>
         </div>
