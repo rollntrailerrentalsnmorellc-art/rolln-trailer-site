@@ -292,6 +292,103 @@ if (trailerError) {
 if (emailError) {
   console.error("Pending booking email failed:", emailError);
 }
+const { error: ownerEmailError } = await resend.emails.send({
+  from: "Roll'N Trailer Rentals <bookings@rollntrailerrentals.com>",
+  to: ["Rollntrailerrentalsnmorellc@gmail.com"],
+  replyTo: customerEmail.trim().toLowerCase(),
+  subject: `New booking request — ${trailer?.name ?? "Trailer"} — ${booking.confirmation_code}`,
+  html: `
+    <div style="margin:0; padding:24px; background:#f3f4f6; font-family:Arial,Helvetica,sans-serif; color:#111827;">
+      <div style="max-width:620px; margin:0 auto; background:#ffffff; border-radius:14px; overflow:hidden;">
+
+        <div style="background:#101814; padding:28px 24px; text-align:center;">
+          <div style="font-size:24px; font-weight:800; color:#ffffff;">
+            Roll'N Trailer Rentals N More LLC
+          </div>
+          <div style="margin-top:7px; color:#7DFB00; font-size:14px; font-weight:700;">
+            New Booking Request
+          </div>
+        </div>
+
+        <div style="padding:30px 26px;">
+          <h2 style="margin:0 0 20px; font-size:25px;">
+            New rental request received
+          </h2>
+
+          <div style="
+            background:#111827;
+            color:#ffffff;
+            border-left:6px solid #7DFB00;
+            padding:18px 20px;
+            border-radius:8px;
+            margin-bottom:24px;
+          ">
+            <strong style="color:#7DFB00;">Trailer</strong><br>
+            ${trailer?.name ?? "Trailer"}<br><br>
+
+            <strong>Pickup:</strong>
+            ${new Intl.DateTimeFormat("en-US", {
+              dateStyle: "medium",
+              timeStyle: "short",
+              timeZone: "America/New_York",
+            }).format(pickupDate)}
+            <br>
+
+            <strong>Return:</strong>
+            ${new Intl.DateTimeFormat("en-US", {
+              dateStyle: "medium",
+              timeStyle: "short",
+              timeZone: "America/New_York",
+            }).format(returnDate)}
+          </div>
+
+          <div style="line-height:1.8; font-size:15px;">
+            <strong>Customer:</strong> ${customerName.trim()}<br>
+            <strong>Email:</strong> ${customerEmail.trim().toLowerCase()}<br>
+            <strong>Phone:</strong> ${customerPhone.trim()}<br>
+            <strong>Tow vehicle:</strong> ${towVehicle?.trim() || "Not provided"}<br>
+            <strong>Tow rating:</strong> ${
+              typeof towRatingLbs === "number" && towRatingLbs > 0
+                ? `${towRatingLbs.toLocaleString()} lbs`
+                : "Not provided"
+            }<br>
+            <strong>Intended use:</strong> ${intendedUse?.trim() || "Not provided"}<br>
+            <strong>Confirmation:</strong>
+            <span style="color:#7DFB00; font-weight:800;">
+              ${booking.confirmation_code}
+            </span>
+          </div>
+
+          <div style="text-align:center; margin:30px 0 10px;">
+            <a
+              href="https://rollntrailerrentals.com/owner/bookings/${booking.id}"
+              style="
+                display:inline-block;
+                background:#7DFB00;
+                color:#111827;
+                text-decoration:none;
+                font-weight:800;
+                padding:14px 22px;
+                border-radius:8px;
+              "
+            >
+              Review Booking
+            </a>
+          </div>
+        </div>
+
+        <div style="background:#101814; color:#b9c5bf; text-align:center; padding:16px; font-size:12px;">
+          New reservation request awaiting review.
+        </div>
+
+      </div>
+    </div>
+  `,
+});
+
+if (ownerEmailError) {
+  console.error("Owner booking email failed:", ownerEmailError);
+}
     return NextResponse.json(
       {
         success: true,
@@ -303,7 +400,7 @@ if (emailError) {
     );
   } catch (error) {
     console.error("Booking API error:", error);
-
+ 
     return NextResponse.json(
       {
         error:
