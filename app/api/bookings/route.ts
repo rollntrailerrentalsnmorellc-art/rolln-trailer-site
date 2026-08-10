@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { Resend } from "resend";
+
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 type BookingRequest = {
   trailerId?: string;
@@ -173,7 +176,112 @@ export async function POST(request: Request) {
         { status: 500 }
       );
     }
+   const { error: emailError } = await resend.emails.send({
+  from: "Roll'N Trailer Rentals <bookings@rollntrailerrentals.com>",
+  to: [customerEmail.trim().toLowerCase()],
+  replyTo: "Rollntrailerrentalsnmorellc@gmail.com",
+  subject: `Rental request received — ${booking.confirmation_code}`,
+  html: `
+    <div style="margin:0; padding:24px; background:#f3f4f6; font-family:Arial,Helvetica,sans-serif; color:#111827;">
+      <div style="max-width:620px; margin:0 auto; background:#ffffff; border-radius:14px; overflow:hidden;">
 
+        <div style="background:#101814; padding:28px 24px; text-align:center;">
+          <div style="font-size:24px; font-weight:800; color:#ffffff;">
+            Roll'N Trailer Rentals N More LLC
+          </div>
+          <div style="margin-top:7px; color:#7DFB00; font-size:14px; font-weight:700;">
+            Rental Request Received
+          </div>
+        </div>
+
+        <div style="padding:30px 26px;">
+          <h2 style="margin:0 0 18px; color:#111827; font-size:25px;">
+            We received your rental request
+          </h2>
+
+          <p style="font-size:16px; line-height:1.6;">
+            Hello ${customerName.trim()},
+          </p>
+
+          <p style="font-size:16px; line-height:1.6;">
+            Thank you for submitting your trailer rental request.
+            Your request has been received and is awaiting approval.
+          </p>
+
+          <div style="
+            background:#111827;
+            color:#ffffff;
+            border-left:6px solid #7DFB00;
+            padding:16px 20px;
+            border-radius:8px;
+            margin:24px 0;
+          ">
+            <strong style="color:#7DFB00;">Rental Requested</strong><br><br>
+
+            <strong>Pickup:</strong>
+            ${new Intl.DateTimeFormat("en-US", {
+              dateStyle: "medium",
+              timeStyle: "short",
+              timeZone: "America/New_York",
+            }).format(pickupDate)}
+            <br>
+
+            <strong>Return:</strong>
+            ${new Intl.DateTimeFormat("en-US", {
+              dateStyle: "medium",
+              timeStyle: "short",
+              timeZone: "America/New_York",
+            }).format(returnDate)}
+          </div>
+
+          <div style="
+            background:#ffffff;
+            border:2px solid #7DFB00;
+            border-radius:12px;
+            padding:20px;
+            margin:24px 0;
+          ">
+            <strong>Confirmation number:</strong><br>
+            <span style="font-size:20px; font-weight:800; color:#7DFB00;">
+              ${booking.confirmation_code}
+            </span>
+          </div>
+
+          <p style="font-size:15px; line-height:1.7;">
+            This request is not yet approved. We will review it and contact you once it has been approved or declined.
+          </p>
+
+          <p style="font-size:15px; line-height:1.7;">
+            Questions? Call or text us at
+            <a href="tel:+17066996990" style="color:#7DFB00; font-weight:700; text-decoration:none;">
+              706-699-6990
+            </a>.
+          </p>
+
+          <div style="border-top:1px solid #e4e7e9; padding-top:20px; margin-top:26px; font-size:14px; line-height:1.7;">
+            <strong>Roll'N Trailer Rentals N More LLC</strong><br>
+            Call or text:
+            <a href="tel:+17066996990" style="color:#7DFB00; font-weight:700; text-decoration:none;">
+              706-699-6990
+            </a><br>
+            <a href="https://rollntrailerrentals.com" style="color:#7DFB00; text-decoration:none;">
+              rollntrailerrentals.com
+            </a>
+          </div>
+        </div>
+
+        <div style="background:#101814; color:#b9c5bf; text-align:center; padding:16px; font-size:12px;">
+          Serving Augusta, Evans, Grovetown, North Augusta, Aiken and the CSRA.
+        </div>
+
+      </div>
+    </div>
+  `,
+});
+
+if (emailError) {
+  console.error("Pending booking email failed:", emailError);
+}
     return NextResponse.json(
       {
         success: true,
