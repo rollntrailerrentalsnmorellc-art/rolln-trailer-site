@@ -4,6 +4,12 @@ import { Resend } from "resend";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
+const siteUrl = 
+process.env.NEXT_PUBLIC_SITE_URL || 
+process.env.VERCEL_URL
+  ? `https://${process.env.VERCEL_URL}`
+  : "https://rollntrailerrentals.com";
+
 type BookingRequest = {
   trailerId?: string;
   pickup?: string;
@@ -361,7 +367,7 @@ const { error: ownerEmailError } = await resend.emails.send({
 
           <div style="text-align:center; margin:30px 0 10px;">
             <a
-              href="https://rollntrailerrentals.com/owner/bookings/${booking.id}"
+              href="${siteUrl}/owner/bookings/${booking.id}"
               style="
                 display:inline-block;
                 background:#7DFB00;
