@@ -203,6 +203,36 @@ if (emailError) {
     "use server";
     
     const supabase = createAdminClient();
+    const { data: currentBooking, error: bookingError } = await supabase
+  .from("bookings")
+  .select(`
+    id,
+    customer_email,
+    customer_name,
+    confirmation_code,
+    pickup_at,
+    return_at,
+    trailer_id
+  `)
+  .eq("id", id)
+  .single();
+
+if (bookingError || !currentBooking) {
+  throw new Error(
+    `Unable to load booking: ${bookingError?.message || "Booking not found"}`
+  );
+}
+
+const { data: trailer, error: trailerError } = await supabase
+  .from("trailers")
+  .select("name")
+  .eq("id", currentBooking.trailer_id)
+  .single();
+
+if (trailerError) {
+  console.error("Unable to load trailer:", trailerError);
+}
+
 
     const { error } = await supabase
      .from("bookings")
@@ -210,9 +240,116 @@ if (emailError) {
     .eq("id", id);
 
   if (error) {
-    throw new Error(`Unable to mark picked up: ${error.message}`);
+    throw new Error(`Unable to decline booking: ${error.message}`);
   }
+  const { error: emailError } = await resend.emails.send({
+  from: "Roll'N Trailer Rentals <bookings@rollntrailerrentals.com>",
+  to: [currentBooking.customer_email],
+  replyTo: "Rollntrailerrentalsnmorellc@gmail.com",
+  subject: `Your trailer rental request — ${currentBooking.confirmation_code}`,
+  html: `
+    <div style="margin:0; padding:24px; background:#f3f4f6; font-family:Arial,Helvetica,sans-serif; color:#111827;">
+      <div style="max-width:620px; margin:0 auto; background:#ffffff; border-radius:14px; overflow:hidden;">
 
+        <div style="background:#101814; padding:28px 24px; text-align:center;">
+          <div style="font-size:24px; font-weight:800; color:#ffffff;">
+            Roll'N Trailer Rentals N More LLC
+          </div>
+          <div style="margin-top:7px; color:#7DFB00; font-size:14px; font-weight:700;">
+            Rental Request Update
+          </div>
+        </div>
+
+        <div style="padding:30px 26px;">
+          <h2 style="margin:0 0 18px; color:#111827; font-size:25px;">
+            We’re unable to approve this rental request
+          </h2>
+
+          <p style="font-size:16px; line-height:1.6;">
+            Hello ${currentBooking.customer_name},
+          </p>
+
+          <p style="font-size:16px; line-height:1.6;">
+            Unfortunately, we’re unable to approve your requested reservation at this time.
+          </p>
+
+          <div style="
+            background:#111827;
+            color:#ffffff;
+            border-left:6px solid #7DFB00;
+            padding:16px 20px;
+            border-radius:8px;
+            margin:24px 0;
+          ">
+            <strong style="color:#7DFB00;">Trailer Requested</strong><br>
+            ${trailer?.name ?? "Trailer"}<br><br>
+
+            <strong>Pickup:</strong> ${formatDate(currentBooking.pickup_at)}<br>
+            <strong>Return:</strong> ${formatDate(currentBooking.return_at)}
+          </div>
+
+          <div style="
+            background:#ffffff;
+            border:2px solid #7DFB00;
+            border-radius:12px;
+            padding:20px;
+            margin:24px 0;
+          ">
+            <strong>Confirmation number:</strong><br>
+            <span style="font-size:20px; font-weight:800; color:#7DFB00;">
+              ${currentBooking.confirmation_code}
+            </span>
+          </div>
+
+          <p style="font-size:15px; line-height:1.7;">
+            If you’d like to request different dates or discuss another trailer option,
+            call or text us at
+            <a href="tel:+17066996990" style="color:#7DFB00; font-weight:700; text-decoration:none;">
+              706-699-6990
+            </a>.
+          </p>
+
+          <div style="text-align:center; margin:28px 0;">
+            <a
+              href="https://rollntrailerrentals.com"
+              style="
+                display:inline-block;
+                background:#7DFB00;
+                color:#111827;
+                text-decoration:none;
+                font-weight:800;
+                padding:14px 22px;
+                border-radius:8px;
+              "
+            >
+              View Available Trailers
+            </a>
+          </div>
+
+          <div style="border-top:1px solid #e4e7e9; padding-top:20px; font-size:14px; line-height:1.7;">
+            <strong>Roll'N Trailer Rentals N More LLC</strong><br>
+            Call or text:
+            <a href="tel:+17066996990" style="color:#7DFB00; font-weight:700; text-decoration:none;">
+              706-699-6990
+            </a><br>
+            <a href="https://rollntrailerrentals.com" style="color:#7DFB00; text-decoration:none;">
+              rollntrailerrentals.com
+            </a>
+          </div>
+        </div>
+
+        <div style="background:#101814; color:#b9c5bf; text-align:center; padding:16px; font-size:12px;">
+          Serving Augusta, Evans, Grovetown, North Augusta, Aiken and the CSRA.
+        </div>
+
+      </div>
+    </div>
+  `,
+});
+
+if (emailError) {
+  console.error("Decline email failed:", emailError);
+}
   revalidatePath(`/owner/bookings/${id}`);
   revalidatePath("/owner/bookings");
   revalidatePath("/owner");
