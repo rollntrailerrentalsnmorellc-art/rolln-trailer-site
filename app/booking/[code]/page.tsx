@@ -2,6 +2,8 @@ import { notFound } from "next/navigation";
 import { createAdminClient } from "@/lib/supabase/admin";
 import PayDepositButton from "./PayDepositButton";
 
+export const dynamic = "force-dynamic";
+
 type PageProps = {
   params: Promise<{
     code: string;
