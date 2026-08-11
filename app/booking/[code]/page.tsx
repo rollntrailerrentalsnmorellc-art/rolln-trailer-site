@@ -30,7 +30,9 @@ export default async function ReservationPage({ params }: PageProps) {
       status,
       trailer_id,
       pickup_at,
-      return_at
+      return_at,
+      deposit_cents,
+      amount_paid_cents
     `)
     .eq("confirmation_code", code)
     .single();
@@ -158,7 +160,23 @@ export default async function ReservationPage({ params }: PageProps) {
             </p>
           </div>
 
-          <PayDepositButton bookingId={booking.id} />
+          {(booking.amount_paid_cents ?? 0) >= (booking.deposit_cents ?? 5000) ? (
+  <div
+    style={{
+      background: "#18201c",
+      border: "2px solid #7DFB00",
+      color: "#7DFB00",
+      padding: "15px 20px",
+      borderRadius: 9,
+      textAlign: "center",
+      fontWeight: 800,
+    }}
+  >
+    ✓ $50 Deposit Paid
+  </div>
+) : (
+  <PayDepositButton bookingId={booking.id} />
+)}
 
           <p style={{ lineHeight: 1.7 }}>
             Questions or changes to your reservation? Call or text us at{" "}
