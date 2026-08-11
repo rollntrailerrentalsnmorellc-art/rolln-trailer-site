@@ -5,6 +5,11 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { Resend } from "resend";
 const resend = new Resend(process.env.RESEND_API_KEY);
+const siteUrl = 
+  process.env.NEXT_PUBLIC_SITE_URL ??
+  (process.env.VERCEL_URL
+    ? `https://${process.env.VERCEL_URL}`
+    : "https://rollntrailerrentals.com");
 export const revalidate = 0;
 
 type PageProps = {
@@ -160,10 +165,10 @@ Next Steps
 
         <div style="text-align:center; margin:28px 0;">
           <a
-            href="https://rollntrailerrentals.com"
+            href="${siteUrl}/booking/${currentBooking.confirmation_code}"
             style="display:inline-block; background:#7DFB00; color:#111827; text-decoration:none; font-weight:800; padding:14px 24px; border-radius:9px;"
           >
-            View Reservation
+            Pay $50 Deposit
           </a>
         </div>
 

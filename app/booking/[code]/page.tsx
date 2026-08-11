@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { createAdminClient } from "@/lib/supabase/admin";
+import PayDepositButton from "./PayDepositButton";
 
 type PageProps = {
   params: Promise<{
@@ -156,6 +157,8 @@ export default async function ReservationPage({ params }: PageProps) {
               <strong>Return:</strong> {formatDate(booking.return_at)}
             </p>
           </div>
+
+          <PayDepositButton bookingId={booking.id} />
 
           <p style={{ lineHeight: 1.7 }}>
             Questions or changes to your reservation? Call or text us at{" "}
