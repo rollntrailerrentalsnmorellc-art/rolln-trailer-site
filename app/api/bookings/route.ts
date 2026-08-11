@@ -161,6 +161,38 @@ const returnDate = parseEasternDateTime(returnAt);
       );
     }
 
+      const { data: trailer, error: trailerError } = await supabase
+  .from("trailers")
+  .select("name, daily_rate_cents, weekly_rate_cents, deposit_cents")
+  .eq("id", trailerId)
+  .single();
+
+if (trailerError) {
+  console.error("Unable to load trailer:", trailerError);
+}
+
+const rentalMs = returnDate.getTime() - pickupDate.getTime();
+const rentalDays = Math.max(1, Math.ceil(rentalMs / (24 * 60 * 60 * 1000)));
+
+const dailyRate = trailer?.daily_rate_cents ?? 0;
+const weeklyRate = trailer?.weekly_rate_cents ?? null;
+const depositAmount = trailer?.deposit_cents ?? 5000;
+
+let subtotalCents = 0;
+
+if (weeklyRate && rentalDays >= 7) {
+  const fullWeeks = Math.floor(rentalDays / 7);
+  const extraDays = rentalDays % 7;
+
+  subtotalCents =
+    fullWeeks * weeklyRate +
+    extraDays * dailyRate;
+} else {
+  subtotalCents = rentalDays * dailyRate;
+}
+
+const totalCents = subtotalCents;
+
     const confirmationCode = createConfirmationCode();
 
     const { data: booking, error: bookingError } =
@@ -187,6 +219,10 @@ const returnDate = parseEasternDateTime(returnAt);
           agreement_accepted_at:
             new Date().toISOString(),
           agreement_version: "2026-08",
+          subtotal_cents: subtotalCents,
+          deposit_cents: depositAmount,
+          total_cents: totalCents,
+          amount_paid_cents: 0,
         })
         .select("id, confirmation_code")
         .single();
@@ -199,15 +235,7 @@ const returnDate = parseEasternDateTime(returnAt);
         { status: 500 }
       );
     }
-   const { data: trailer, error: trailerError } = await supabase
-  .from("trailers")
-  .select("name")
-  .eq("id", trailerId)
-  .single();
 
-if (trailerError) {
-  console.error("Unable to load trailer:", trailerError);
-}
     const { error: emailError } = await resend.emails.send({
   from: "Roll'N Trailer Rentals <bookings@rollntrailerrentals.com>",
   to: [customerEmail.trim().toLowerCase()],
