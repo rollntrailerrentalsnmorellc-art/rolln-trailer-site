@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { Resend } from "resend";
+import { TZDate } from "@date-fns/tz"
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -81,8 +82,24 @@ export async function POST(request: Request) {
       );
     }
 
-    const pickupDate = new Date(pickup);
-    const returnDate = new Date(returnAt);
+    const parseEasternDateTime = (value: string) => {
+  const [datePart, timePart] = value.split("T");
+  const [year, month, day] = datePart.split("-").map(Number);
+  const [hour, minute] = timePart.split(":").map(Number);
+
+  return new TZDate(
+    year,
+    month - 1,
+    day,
+    hour,
+    minute,
+    0,
+    "America/New_York"
+  );
+};
+
+const pickupDate = parseEasternDateTime(pickup);
+const returnDate = parseEasternDateTime(returnAt);
 
     if (
       Number.isNaN(pickupDate.getTime()) ||
