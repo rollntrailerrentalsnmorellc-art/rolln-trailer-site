@@ -80,8 +80,8 @@ export async function POST(request: Request) {
         },
       },
 
-      success_url: `${siteUrl}/booking/${booking.confirmation_code}?payment=success`,
-      cancel_url: `${siteUrl}/booking/${booking.confirmation_code}?payment=cancelled`,
+      success_url: `https://rollntrailerrentals.com/booking/${booking.confirmation_code}?payment=success`,
+      cancel_url: `https://rollntrailerrentals.com/booking/${booking.confirmation_code}?payment=cancelled`,
     });
 
     return NextResponse.json({
