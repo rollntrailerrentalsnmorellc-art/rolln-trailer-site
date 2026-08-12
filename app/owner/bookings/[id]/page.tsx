@@ -406,11 +406,7 @@ if (emailError) {
   );
 
   if (remainingBalance > 0) {
-    throw new Error(
-      `Cannot complete rental while a balance of $${(
-        remainingBalance / 100
-      ).toFixed(2)} is still due.`
-    );
+    redirect(`/owner/bookings/${id}`);
   }
 
   const { error } = await supabase
@@ -721,12 +717,33 @@ if (emailError) {
             )}
 
             {booking.status === "active" && (
-              <form action={markReturned} style={{ width: "100%" }}>
-                <button className="btn secondary" type="submit" style={{ width: "100%" }}>
-                  Mark Returned
-                </button>
-              </form>
-            )}
+  balance > 0 ? (
+    <div
+      style={{
+        width: "100%",
+        padding: 14,
+        textAlign: "center",
+        borderRadius: 8,
+        background: "#18201c",
+        border: "2px solid #7DFB00",
+        color: "#7DFB00",
+        fontWeight: 700,
+      }}
+    >
+      Balance Due: {formatMoney(balance)} — Collect Payment Before Completing Rental
+    </div>
+  ) : (
+    <form action={markReturned} style={{ width: "100%" }}>
+      <button
+        className="btn secondary"
+        type="submit"
+        style={{ width: "100%" }}
+      >
+        Mark Returned
+      </button>
+    </form>
+  )
+)}
 
             {booking.status === "completed" && (
               <div
