@@ -162,7 +162,7 @@ export default async function ReservationPage({ params }: PageProps) {
             </p>
           </div>
 
-          {(booking.amount_paid_cents ?? 0) >= (booking.deposit_cents ?? 5000) ? (
+         {(booking.amount_paid_cents ?? 0) >= (booking.deposit_cents ?? 5000) ? (
   <div
     style={{
       marginTop: 24,
@@ -177,7 +177,9 @@ export default async function ReservationPage({ params }: PageProps) {
       fontSize: 17,
     }}
   >
-    ✓ $50 Deposit Paid
+    {(booking.amount_paid_cents ?? 0) > (booking.deposit_cents ?? 5000)
+      ? "✓ Paid in Full"
+      : "✓ $50 Deposit Paid"}
   </div>
 ) : (
   <PayDepositButton bookingId={booking.id} />
