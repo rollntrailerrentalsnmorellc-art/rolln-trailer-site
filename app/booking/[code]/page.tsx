@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { createAdminClient } from "@/lib/supabase/admin";
 import PayDepositButton from "./PayDepositButton";
+import PaymentSuccessRefresh from "../PaymentSuccessRefresh";
 
 export const dynamic = "force-dynamic";
 
@@ -67,6 +68,7 @@ export default async function ReservationPage({ params }: PageProps) {
         fontFamily: "Arial, Helvetica, sans-serif",
       }}
     >
+      <PaymentSuccessRefresh />
       <div
         style={{
           maxWidth: 650,
