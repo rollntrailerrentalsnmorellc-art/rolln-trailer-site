@@ -364,7 +364,7 @@ if (emailError) {
    async function collectBalance() {
   "use server";
 
-  const response = await fetch(`${siteUrl}/api/checkout`, {
+  const response = await fetch("https://rollntrailerrentals.com/api/checkout", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
