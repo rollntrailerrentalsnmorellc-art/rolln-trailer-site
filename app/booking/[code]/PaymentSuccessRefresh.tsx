@@ -10,11 +10,20 @@ export default function PaymentSuccessRefresh() {
   useEffect(() => {
     if (searchParams.get("payment") !== "success") return;
 
-    const timer = setTimeout(() => {
+    router.refresh();
+
+    const interval = setInterval(() => {
       router.refresh();
     }, 2000);
 
-    return () => clearTimeout(timer);
+    const stop = setTimeout(() => {
+      clearInterval(interval);
+    }, 15000);
+
+    return () => {
+      clearInterval(interval);
+      clearTimeout(stop);
+    };
   }, [router, searchParams]);
 
   return null;
