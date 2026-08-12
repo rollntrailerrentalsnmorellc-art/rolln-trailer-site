@@ -51,17 +51,45 @@ export async function POST(request: Request) {
       if (session.payment_status === "paid") {
         const supabase = createAdminClient();
 
-        const { error } = await supabase
-          .from("bookings")
-          .update({
-             amount_paid_cents: session.amount_total ?? 5000,
-             stripe_checkout_session_id: session.id,
-             stripe_payment_intent_id:
-               typeof session.payment_intent === "string"
-                 ? session.payment_intent
-                : null,
-           })
-          .eq("id", bookingId);
+const { data: currentBooking, error: lookupError } = await supabase
+  .from("bookings")
+  .select("amount_paid_cents, total_cents, stripe_checkout_session_id")
+  .eq("id", bookingId)
+  .single();
+
+if (lookupError || !currentBooking) {
+  console.error("Unable to load booking payment:", lookupError);
+
+  return NextResponse.json(
+    { error: "Unable to load booking payment." },
+    { status: 500 }
+  );
+}
+
+// Stripe can retry webhook events.
+// If this exact checkout session was already recorded, don't add it again.
+if (currentBooking.stripe_checkout_session_id === session.id) {
+  return NextResponse.json({ received: true });
+}
+
+const paymentAmount = session.amount_total ?? 0;
+
+const newAmountPaid = Math.min(
+  (currentBooking.amount_paid_cents ?? 0) + paymentAmount,
+  currentBooking.total_cents ?? paymentAmount
+);
+
+const { error } = await supabase
+  .from("bookings")
+  .update({
+    amount_paid_cents: newAmountPaid,
+    stripe_checkout_session_id: session.id,
+    stripe_payment_intent_id:
+      typeof session.payment_intent === "string"
+        ? session.payment_intent
+        : null,
+  })
+  .eq("id", bookingId);
 
         if (error) {
           console.error("Unable to update booking payment:", error);

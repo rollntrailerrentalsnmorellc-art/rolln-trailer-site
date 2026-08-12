@@ -6,14 +6,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
 export async function POST(request: Request) {
   try {
-    const { bookingId } = await request.json();
-
-    if (!bookingId) {
-      return NextResponse.json(
-        { error: "Booking ID is required." },
-        { status: 400 }
-      );
-    }
+    const { bookingId, paymentType } = await request.json();
 
     const supabase = createAdminClient();
 
@@ -25,7 +18,10 @@ export async function POST(request: Request) {
         customer_name,
         customer_email,
         trailer_id,
-        status
+        status,
+        amount_paid_cents,
+        total_cents,
+        deposit_cents
       `)
       .eq("id", bookingId)
       .single();
@@ -36,6 +32,22 @@ export async function POST(request: Request) {
         { status: 404 }
       );
     }
+
+    const amountAlreadyPaid = booking.amount_paid_cents ?? 0;
+const totalAmount = booking.total_cents ?? 0;
+const remainingBalance = Math.max(totalAmount - amountAlreadyPaid, 0);
+
+const chargeAmount =
+  paymentType === "balance"
+    ? remainingBalance
+    : booking.deposit_cents ?? 5000;
+
+if (chargeAmount <= 0) {
+  return NextResponse.json(
+    { error: "There is no remaining balance to collect." },
+    { status: 400 }
+  );
+}
 
     const { data: trailer } = await supabase
       .from("trailers")
@@ -62,7 +74,7 @@ export async function POST(request: Request) {
               name: `${trailer?.name ?? "Trailer"} Reservation Deposit`,
               description: `Reservation ${booking.confirmation_code}`,
             },
-            unit_amount: 5000,
+            unit_amount: chargeAmount,
           },
           quantity: 1,
         },
@@ -71,12 +83,14 @@ export async function POST(request: Request) {
       metadata: {
         booking_id: booking.id,
         confirmation_code: booking.confirmation_code,
+        payment_type: paymentType == "balance" ? "balance" : "deposit",
       },
 
       payment_intent_data: {
         metadata: {
           booking_id: booking.id,
           confirmation_code: booking.confirmation_code,
+          payment_type: paymentType == "balance" ? "balance" : "deposit",
         },
       },
 
