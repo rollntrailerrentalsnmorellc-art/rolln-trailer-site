@@ -378,9 +378,16 @@ if (emailError) {
 
   const data = await response.json();
 
-  if (!response.ok || !data.url) {
-    throw new Error(data.error || "Unable to start balance payment.");
-  }
+ if (!response.ok || !data.url) {
+  console.error("Balance checkout failed:", data);
+
+  throw new Error(
+    typeof data.error === "string"
+      ? data.error
+      : JSON.stringify(data)
+  );
+}
+
 
   redirect(data.url);
 }
