@@ -165,13 +165,16 @@ export default async function ReservationPage({ params }: PageProps) {
           {(booking.amount_paid_cents ?? 0) >= (booking.deposit_cents ?? 5000) ? (
   <div
     style={{
+      marginTop: 24,
+      marginBottom: 24,
       background: "#18201c",
       border: "2px solid #7DFB00",
       color: "#7DFB00",
-      padding: "15px 20px",
+      padding: "16px 20px",
       borderRadius: 9,
       textAlign: "center",
       fontWeight: 800,
+      fontSize: 17,
     }}
   >
     ✓ $50 Deposit Paid
