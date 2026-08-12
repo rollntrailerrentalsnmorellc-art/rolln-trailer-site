@@ -389,6 +389,30 @@ if (emailError) {
 
   const supabase = createAdminClient();
 
+  const { data: currentBooking, error: bookingError } = await supabase
+    .from("bookings")
+    .select("total_cents, amount_paid_cents")
+    .eq("id", id)
+    .single();
+
+  if (bookingError || !currentBooking) {
+    throw new Error("Unable to verify booking balance.");
+  }
+
+  const remainingBalance = Math.max(
+    (currentBooking.total_cents ?? 0) -
+      (currentBooking.amount_paid_cents ?? 0),
+    0
+  );
+
+  if (remainingBalance > 0) {
+    throw new Error(
+      `Cannot complete rental while a balance of $${(
+        remainingBalance / 100
+      ).toFixed(2)} is still due.`
+    );
+  }
+
   const { error } = await supabase
     .from("bookings")
     .update({
@@ -738,4 +762,8 @@ if (emailError) {
       </section>
     </main>
   );
+}
+
+function eq(arg0: string, id: string) {
+  throw new Error("Function not implemented.");
 }
