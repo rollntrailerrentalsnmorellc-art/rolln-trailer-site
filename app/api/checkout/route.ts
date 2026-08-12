@@ -71,7 +71,10 @@ if (chargeAmount <= 0) {
           price_data: {
             currency: "usd",
             product_data: {
-              name: `${trailer?.name ?? "Trailer"} Reservation Deposit`,
+              name: 
+                 paymentType === "balance"
+                  ? `${trailer?.name ?? "Trailer"} Remaining Balance`
+                  : `${trailer?.name ?? "Trailer"} Reservation Deposit`,
               description: `Reservation ${booking.confirmation_code}`,
             },
             unit_amount: chargeAmount,
