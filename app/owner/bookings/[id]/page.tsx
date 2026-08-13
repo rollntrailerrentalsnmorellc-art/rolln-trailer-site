@@ -521,6 +521,14 @@ if (emailError) {
       deposit_cents,
       total_cents,
       amount_paid_cents,
+      drivers_license_path,
+      insurance_path,
+      stripe_checkout_session_id,
+      stripe_payment_intent_id,
+      completed_at,
+      canceled_at,
+      cancellation_reason,
+      cancellation_notes,
       agreement_accepted_at,
       agreement_version,
       pickup_notes,
@@ -534,6 +542,24 @@ if (emailError) {
   if (error || !booking) {
     notFound();
   }
+  let driversLicenseUrl: string | null = null;
+let insuranceUrl: string | null = null;
+
+if (booking.drivers_license_path) {
+  const { data } = await supabase.storage
+    .from("rental-documents")
+    .createSignedUrl(booking.drivers_license_path, 60 * 60 * 24 * 365);
+
+  driversLicenseUrl = data?.signedUrl ?? null;
+}
+
+if (booking.insurance_path) {
+  const { data } = await supabase.storage
+    .from("rental-documents")
+    .createSignedUrl(booking.insurance_path, 60 * 60 * 24 * 365);
+
+  insuranceUrl = data?.signedUrl ?? null;
+}
 
   const balance = Math.max(
     (booking.total_cents ?? 0) - (booking.amount_paid_cents ?? 0),
@@ -689,23 +715,47 @@ if (emailError) {
             </div>
 
             <div className="panel">
-              <h2>Notes</h2>
+  <h2>Customer Documents</h2>
 
-              <p>
-                <strong>Pickup:</strong>{" "}
-                {booking.pickup_notes || "No pickup notes"}
-              </p>
+  <div style={{ marginBottom: 16 }}>
+  <strong>Driver&apos;s License:</strong>
 
-              <p>
-                <strong>Return:</strong>{" "}
-                {booking.return_notes || "No return notes"}
-              </p>
+  {booking.drivers_license_path ? (
+    <div style={{ marginTop: 8 }}>
+      <a
+        href={driversLicenseUrl ?? "#"}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="button"
+      >
+        View Driver&apos;s License
+      </a>
+    </div>
+  ) : (
+    <p className="muted">Missing</p>
+  )}
+</div>
 
-              <p>
-                <strong>Owner:</strong>{" "}
-                {booking.owner_notes || "No owner notes"}
-              </p>
-            </div>
+<div>
+  <strong>Proof of Insurance:</strong>
+
+  {booking.insurance_path ? (
+    <div style={{ marginTop: 8 }}>
+      <a
+        href={insuranceUrl ?? "#"}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="button"
+      >
+        View Insurance
+      </a>
+    </div>
+  ) : (
+    <p className="muted">Missing</p>
+  )}
+</div>
+</div>
+
           </div>
 
           <div
