@@ -526,7 +526,7 @@ if (emailError) {
       stripe_checkout_session_id,
       stripe_payment_intent_id,
       completed_at,
-      canceled_at,
+      cancelled_at,
       cancellation_reason,
       cancellation_notes,
       agreement_accepted_at,
@@ -539,20 +539,10 @@ if (emailError) {
     .eq("id", id)
     .single();
 
- if (error) {
-  return (
-    <main style={{ padding: 40 }}>
-      <h1>Owner Booking Error</h1>
-      <pre style={{ whiteSpace: "pre-wrap" }}>
-        {JSON.stringify(error, null, 2)}
-      </pre>
-    </main>
-  );
-}
-
-if (!booking) {
+ if (error || !booking) { 
   notFound();
-}
+ }
+ 
   let driversLicenseUrl: string | null = null;
 let insuranceUrl: string | null = null;
 
