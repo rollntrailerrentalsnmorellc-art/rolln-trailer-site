@@ -539,9 +539,14 @@ if (emailError) {
     .eq("id", id)
     .single();
 
-  if (error || !booking) {
-    notFound();
-  }
+  if (error) {
+  console.error("OWNER BOOKING ERROR:", error);
+  throw new Error(error.message);
+}
+
+if (!booking) {
+  notFound();
+}
   let driversLicenseUrl: string | null = null;
 let insuranceUrl: string | null = null;
 
