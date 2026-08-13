@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import PayDepositButton from "./PayDepositButton";
 import PaymentSuccessRefresh from "./PaymentSuccessRefresh";
 import IntakeUploadForm from "./IntakeUploadForm";
+import RentalAgreementForm from "./RentalAgreementForm";
 
 export const dynamic = "force-dynamic";
 
@@ -42,6 +43,7 @@ export default async function ReservationPage({ params }: PageProps) {
       drivers_license_uploaded_at,
       insurance_uploaded_at,
       intake_completed_at,
+      agreement_accepted_at,
       card_on_file_authorized_at
     `)
     .eq("confirmation_code", code)
@@ -177,6 +179,10 @@ export default async function ReservationPage({ params }: PageProps) {
   hasInsurance={Boolean(booking.insurance_path)}
 />
 
+<RentalAgreementForm
+   confirmationCode={booking.confirmation_code}
+   alreadyAccepted={Boolean(booking.agreement_accepted_at)}
+/>
 {(booking.amount_paid_cents ?? 0) >= (booking.deposit_cents ?? 5000) ? (
   <div
     style={{
