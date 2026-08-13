@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { createAdminClient } from "@/lib/supabase/admin";
 import PayDepositButton from "./PayDepositButton";
 import PaymentSuccessRefresh from "./PaymentSuccessRefresh";
+import IntakeUploadForm from "./IntakeUploadForm";
 
 export const dynamic = "force-dynamic";
 
@@ -35,7 +36,13 @@ export default async function ReservationPage({ params }: PageProps) {
       pickup_at,
       return_at,
       deposit_cents,
-      amount_paid_cents
+      amount_paid_cents,
+      drivers_license_path,
+      insurance_path,
+      drivers_license_uploaded_at,
+      insurance_uploaded_at,
+      intake_completed_at,
+      card_on_file_authorized_at
     `)
     .eq("confirmation_code", code)
     .single();
@@ -186,7 +193,11 @@ export default async function ReservationPage({ params }: PageProps) {
 ) : (
   <PayDepositButton bookingId={booking.id} />
 )}
-
+<IntakeUploadForm
+  confirmationCode={booking.confirmation_code}
+  hasDriversLicense={Boolean(booking.drivers_license_path)}
+  hasInsurance={Boolean(booking.insurance_path)}
+  />
           <p style={{ lineHeight: 1.7 }}>
             Questions or changes to your reservation? Call or text us at{" "}
             <a
