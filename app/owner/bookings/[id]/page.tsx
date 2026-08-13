@@ -527,7 +527,6 @@ if (emailError) {
       stripe_payment_intent_id,
       completed_at,
       cancelled_at,
-      cancellation_reason,
       cancellation_notes,
       agreement_accepted_at,
       agreement_version,
