@@ -459,6 +459,7 @@ if (emailError) {
 }
 
   const supabase = await createClient();
+  const adminSupabase = createAdminClient();
 
   const {
     data: { user },
@@ -545,7 +546,7 @@ if (emailError) {
 let insuranceUrl: string | null = null;
 
 if (booking.drivers_license_path) {
-  const { data } = await supabase.storage
+  const { data } = await adminSupabase.storage
     .from("rental-documents")
     .createSignedUrl(booking.drivers_license_path, 60 * 60 * 24 * 365);
 
@@ -553,7 +554,7 @@ if (booking.drivers_license_path) {
 }
 
 if (booking.insurance_path) {
-  const { data } = await supabase.storage
+  const { data } = await adminSupabase.storage
     .from("rental-documents")
     .createSignedUrl(booking.insurance_path, 60 * 60 * 24 * 365);
 
