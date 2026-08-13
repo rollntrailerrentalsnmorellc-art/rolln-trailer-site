@@ -216,9 +216,6 @@ const totalCents = subtotalCents;
               ? towRatingLbs
               : null,
           intended_use: intendedUse?.trim() || null,
-          agreement_accepted_at:
-            new Date().toISOString(),
-          agreement_version: "2026-08",
           subtotal_cents: subtotalCents,
           deposit_cents: depositAmount,
           total_cents: totalCents,
