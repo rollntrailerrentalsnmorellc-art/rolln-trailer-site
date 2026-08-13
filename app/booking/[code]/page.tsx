@@ -171,7 +171,13 @@ export default async function ReservationPage({ params }: PageProps) {
             </p>
           </div>
 
-         {(booking.amount_paid_cents ?? 0) >= (booking.deposit_cents ?? 5000) ? (
+        <IntakeUploadForm
+  confirmationCode={booking.confirmation_code}
+  hasDriversLicense={Boolean(booking.drivers_license_path)}
+  hasInsurance={Boolean(booking.insurance_path)}
+/>
+
+{(booking.amount_paid_cents ?? 0) >= (booking.deposit_cents ?? 5000) ? (
   <div
     style={{
       marginTop: 24,
@@ -193,11 +199,6 @@ export default async function ReservationPage({ params }: PageProps) {
 ) : (
   <PayDepositButton bookingId={booking.id} />
 )}
-<IntakeUploadForm
-  confirmationCode={booking.confirmation_code}
-  hasDriversLicense={Boolean(booking.drivers_license_path)}
-  hasInsurance={Boolean(booking.insurance_path)}
-  />
           <p style={{ lineHeight: 1.7 }}>
             Questions or changes to your reservation? Call or text us at{" "}
             <a
