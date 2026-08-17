@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import Stripe from "stripe";
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
 export const runtime = "nodejs";
 
@@ -72,7 +75,20 @@ export async function POST(request: Request) {
     const { data: booking, error: bookingError } =
       await supabase
         .from("bookings")
-        .select("id, confirmation_code, drivers_license_path, insurance_path")
+        .select(`
+          id, 
+          confirmation_code,
+          customer_name,
+          customer_email, 
+          drivers_license_path, 
+          insurance_path,
+          agreement_accepted_at,
+          deposit_cents,
+          total_cents,
+          amount_paid_cents,
+          stripe_balance_invoice_id
+          `)
+          
         .eq("confirmation_code", confirmationCode)
         .single();
 
@@ -173,6 +189,97 @@ const { error: updateError } = await supabase
         { status: 500 }
       );
     }
+       
+    if (
+  intakeIsComplete &&
+  booking.agreement_accepted_at &&
+  !booking.stripe_balance_invoice_id &&
+  (booking.amount_paid_cents ?? 0) >= (booking.deposit_cents ?? 0)
+) {
+  const remainingBalance =
+    (booking.total_cents ?? 0) - (booking.amount_paid_cents ?? 0);
+
+  if (remainingBalance > 0 && booking.customer_email) {
+    const existingCustomers = await stripe.customers.list({
+      email: booking.customer_email,
+      limit: 1,
+    });
+
+    let customerId: string;
+
+    if (existingCustomers.data.length > 0) {
+      customerId = existingCustomers.data[0].id;
+    } else {
+      const customer = await stripe.customers.create({
+        email: booking.customer_email,
+        name: booking.customer_name ?? undefined,
+        metadata: {
+          booking_id: booking.id,
+          confirmation_code: booking.confirmation_code,
+        },
+      });
+
+      customerId = customer.id;
+    }
+
+    const invoice = await stripe.invoices.create({
+      customer: customerId,
+      collection_method: "send_invoice",
+      days_until_due: 7,
+      description: `Remaining balance for trailer rental ${booking.confirmation_code}`,
+      metadata: {
+        booking_id: booking.id,
+        confirmation_code: booking.confirmation_code,
+      },
+    },
+    {
+      idempotencyKey: `balance-invoice-${booking.id}`,
+    }
+  );
+
+    await stripe.invoiceItems.create({
+      customer: customerId,
+      invoice: invoice.id,
+      amount: remainingBalance,
+      currency: "usd",
+      description: `Remaining rental balance — ${booking.confirmation_code}`,
+    },
+    {
+      idempotencyKey: `balance-invoice-item-${booking.id}`,
+    }
+  );
+
+    const finalizedInvoice = await stripe.invoices.finalizeInvoice(
+      invoice.id,
+      {},
+      {
+        idempotencyKey: `balance-invoice-finalize-${booking.id}`,
+      }
+    );
+
+    await stripe.invoices.sendInvoice(
+      finalizedInvoice.id,
+      {},
+      {
+        idempotencyKey: `balance-invoice-send-${booking.id}`,
+      }
+    );
+
+    const { error: invoiceSaveError } = await supabase
+      .from("bookings")
+      .update({
+        stripe_balance_invoice_id: finalizedInvoice.id,
+      })
+      .eq("id", booking.id);
+
+    if (invoiceSaveError) {
+      console.error(
+        "Balance invoice created but invoice ID could not be saved:",
+        invoiceSaveError
+      );
+    }
+  }
+}
 
     return NextResponse.json({
       success: true,
