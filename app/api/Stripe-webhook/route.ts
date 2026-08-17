@@ -184,6 +184,13 @@ const depositPaid = Math.min(
   currentBooking.deposit_cents ?? newAmountPaid
 );
 
+console.log("BALANCE INVOICE DEBUG", {
+  newAmountPaid,
+  deposit_cents: currentBooking.deposit_cents,
+  amount_paid_cents: currentBooking.amount_paid_cents,
+  depositPaid,
+});
+
 if (depositPaid > 0) {
   await stripe.invoiceItems.create(
     {
