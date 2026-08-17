@@ -192,6 +192,11 @@ console.log("BALANCE INVOICE DEBUG", {
 });
 
 if (depositPaid > 0) {
+  console.log("CREATING DEPOSIT CREDIT ITEM", {
+    invoiceID: invoice.id,
+    depositPaid,
+    negativeAmount: -depositPaid,
+  });
   await stripe.invoiceItems.create(
     {
       customer: customerId,
@@ -204,6 +209,8 @@ if (depositPaid > 0) {
       idempotencyKey: `balance-invoice-deposit-${currentBooking.id}`,
     }
   );
+
+  console.log("DEPOSIT CREDIT ITEM CREATED");
 }
 
     const finalizedInvoice = await stripe.invoices.finalizeInvoice(
