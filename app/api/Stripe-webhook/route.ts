@@ -58,6 +58,7 @@ const { data: currentBooking, error: lookupError } = await supabase
   confirmation_code,
   customer_name,
   customer_email,
+  pickup_at,
   amount_paid_cents,
   total_cents,
   deposit_cents,
@@ -144,12 +145,14 @@ if (
 
       customerId = customer.id;
     }
-
+    const pickupDueDate = Math.floor(
+      new Date(currentBooking.pickup_at).getTime() / 1000
+    );
     const invoice = await stripe.invoices.create(
       {
         customer: customerId,
         collection_method: "send_invoice",
-        days_until_due: 7,
+        due_date: pickupDueDate,
         description: `Remaining balance for trailer rental ${currentBooking.confirmation_code}`,
         metadata: {
           booking_id: currentBooking.id,
@@ -161,18 +164,40 @@ if (
       }
     );
 
-    await stripe.invoiceItems.create(
-      {
-        customer: customerId,
-        invoice: invoice.id,
-        amount: remainingBalance,
-        currency: "usd",
-        description: `Remaining rental balance — ${currentBooking.confirmation_code}`,
-      },
-      {
-        idempotencyKey: `balance-invoice-item-${currentBooking.id}`,
-      }
-    );
+    // Full rental price
+await stripe.invoiceItems.create(
+  {
+    customer: customerId,
+    invoice: invoice.id,
+    amount: currentBooking.total_cents ?? 0,
+    currency: "usd",
+    description: `Rental total — ${currentBooking.confirmation_code}`,
+  },
+  {
+    idempotencyKey: `balance-invoice-total-${currentBooking.id}`,
+  }
+);
+
+// Show deposit already paid as a credit
+const depositPaid =
+  currentBooking.amount_paid_cents ??
+  currentBooking.deposit_cents ??
+  0;
+
+if (depositPaid > 0) {
+  await stripe.invoiceItems.create(
+    {
+      customer: customerId,
+      invoice: invoice.id,
+      amount: -depositPaid,
+      currency: "usd",
+      description: `Deposit already paid — ${currentBooking.confirmation_code}`,
+    },
+    {
+      idempotencyKey: `balance-invoice-deposit-${currentBooking.id}`,
+    }
+  );
+}
 
     const finalizedInvoice = await stripe.invoices.finalizeInvoice(
       invoice.id,

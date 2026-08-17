@@ -79,7 +79,8 @@ export async function POST(request: Request) {
           id, 
           confirmation_code,
           customer_name,
-          customer_email, 
+          customer_email,
+          pickup_at, 
           drivers_license_path, 
           insurance_path,
           agreement_accepted_at,
@@ -222,32 +223,57 @@ const { error: updateError } = await supabase
       customerId = customer.id;
     }
 
-    const invoice = await stripe.invoices.create({
-      customer: customerId,
-      collection_method: "send_invoice",
-      days_until_due: 7,
-      description: `Remaining balance for trailer rental ${booking.confirmation_code}`,
-      metadata: {
-        booking_id: booking.id,
-        confirmation_code: booking.confirmation_code,
-      },
-    },
-    {
-      idempotencyKey: `balance-invoice-${booking.id}`,
-    }
-  );
+  const pickupDueDate = Math.floor(
+  new Date(booking.pickup_at).getTime() / 1000
+);
 
-    await stripe.invoiceItems.create({
+const invoice = await stripe.invoices.create(
+  {
+    customer: customerId,
+    collection_method: "send_invoice",
+    due_date: pickupDueDate,
+    description: `Remaining balance for trailer rental ${booking.confirmation_code}`,
+    metadata: {
+      booking_id: booking.id,
+      confirmation_code: booking.confirmation_code,
+    },
+  },
+  {
+    idempotencyKey: `balance-invoice-${booking.id}`,
+  }
+);
+
+// Full rental price
+await stripe.invoiceItems.create(
+  {
+    customer: customerId,
+    invoice: invoice.id,
+    amount: booking.total_cents ?? 0,
+    currency: "usd",
+    description: `Rental total — ${booking.confirmation_code}`,
+  },
+  {
+    idempotencyKey: `balance-invoice-total-${booking.id}`,
+  }
+);
+
+// Show the deposit already paid as a credit
+const depositPaid = booking.amount_paid_cents ?? booking.deposit_cents ?? 0;
+
+if (depositPaid > 0) {
+  await stripe.invoiceItems.create(
+    {
       customer: customerId,
       invoice: invoice.id,
-      amount: remainingBalance,
+      amount: -depositPaid,
       currency: "usd",
-      description: `Remaining rental balance — ${booking.confirmation_code}`,
+      description: `Deposit already paid — ${booking.confirmation_code}`,
     },
     {
-      idempotencyKey: `balance-invoice-item-${booking.id}`,
+      idempotencyKey: `balance-invoice-deposit-${booking.id}`,
     }
   );
+}
 
     const finalizedInvoice = await stripe.invoices.finalizeInvoice(
       invoice.id,
