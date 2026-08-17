@@ -179,10 +179,10 @@ await stripe.invoiceItems.create(
 );
 
 // Show deposit already paid as a credit
-const depositPaid =
-  currentBooking.amount_paid_cents ??
-  currentBooking.deposit_cents ??
-  0;
+const depositPaid = Math.min(
+  newAmountPaid,
+  currentBooking.deposit_cents ?? newAmountPaid
+);
 
 if (depositPaid > 0) {
   await stripe.invoiceItems.create(
