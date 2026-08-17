@@ -53,20 +53,33 @@ export async function POST(request: Request) {
 
 const { data: currentBooking, error: lookupError } = await supabase
   .from("bookings")
-  .select("amount_paid_cents, total_cents, stripe_checkout_session_id")
-  .eq("id", bookingId)
-  .single();
+  .select(`
+  id,
+  confirmation_code,
+  customer_name,
+  customer_email,
+  amount_paid_cents,
+  total_cents,
+  deposit_cents,
+  intake_completed_at,
+  agreement_accepted_at,
+  stripe_checkout_session_id,
+  stripe_balance_invoice_id
+`)
+.eq("id", bookingId)
+.single();
 
-if (lookupError || !currentBooking) {
-  console.error("Unable to load booking payment:", lookupError);
-
-  return NextResponse.json(
-    { error: "Unable to load booking payment." },
-    { status: 500 }
-  );
-}
-
-// Stripe can retry webhook events.
+  
+  if (lookupError || !currentBooking) {
+    console.error("Unable to load booking payment:", lookupError);
+  
+    return NextResponse.json(
+      { error: "Unable to load booking payment." },
+      { status: 500 }
+    );
+  }
+  
+ // Stripe can retry webhook events.
 // If this exact checkout session was already recorded, don't add it again.
 if (currentBooking.stripe_checkout_session_id === session.id) {
   return NextResponse.json({ received: true });
@@ -91,20 +104,112 @@ const { error } = await supabase
   })
   .eq("id", bookingId);
 
-        if (error) {
-          console.error("Unable to update booking payment:", error);
+if (error) {
+  console.error("Unable to update booking payment:", error);
 
-          return NextResponse.json(
-            { error: "Unable to update booking payment." },
-            { status: 500 }
-          );
-        }
+  return NextResponse.json(
+    { error: "Unable to update booking payment." },
+    { status: 500 }
+  );
+}
 
-        console.log(
-          `Deposit paid for booking ${bookingId}: ${session.id}`
-        );
-      }
+if (
+  currentBooking.intake_completed_at &&
+  currentBooking.agreement_accepted_at &&
+  !currentBooking.stripe_balance_invoice_id &&
+  newAmountPaid >= (currentBooking.deposit_cents ?? 0)
+) {
+  const remainingBalance =
+    (currentBooking.total_cents ?? 0) - newAmountPaid;
+
+  if (remainingBalance > 0 && currentBooking.customer_email) {
+    const existingCustomers = await stripe.customers.list({
+      email: currentBooking.customer_email,
+      limit: 1,
+    });
+
+    let customerId: string;
+
+    if (existingCustomers.data.length > 0) {
+      customerId = existingCustomers.data[0].id;
+    } else {
+      const customer = await stripe.customers.create({
+        email: currentBooking.customer_email,
+        name: currentBooking.customer_name ?? undefined,
+        metadata: {
+          booking_id: currentBooking.id,
+          confirmation_code: currentBooking.confirmation_code,
+        },
+      });
+
+      customerId = customer.id;
     }
+
+    const invoice = await stripe.invoices.create(
+      {
+        customer: customerId,
+        collection_method: "send_invoice",
+        days_until_due: 7,
+        description: `Remaining balance for trailer rental ${currentBooking.confirmation_code}`,
+        metadata: {
+          booking_id: currentBooking.id,
+          confirmation_code: currentBooking.confirmation_code,
+        },
+      },
+      {
+        idempotencyKey: `balance-invoice-${currentBooking.id}`,
+      }
+    );
+
+    await stripe.invoiceItems.create(
+      {
+        customer: customerId,
+        invoice: invoice.id,
+        amount: remainingBalance,
+        currency: "usd",
+        description: `Remaining rental balance — ${currentBooking.confirmation_code}`,
+      },
+      {
+        idempotencyKey: `balance-invoice-item-${currentBooking.id}`,
+      }
+    );
+
+    const finalizedInvoice = await stripe.invoices.finalizeInvoice(
+      invoice.id,
+      {},
+      {
+        idempotencyKey: `balance-invoice-finalize-${currentBooking.id}`,
+      }
+    );
+
+    await stripe.invoices.sendInvoice(
+      finalizedInvoice.id,
+      {},
+      {
+        idempotencyKey: `balance-invoice-send-${currentBooking.id}`,
+      }
+    );
+
+    const { error: invoiceSaveError } = await supabase
+      .from("bookings")
+      .update({
+        stripe_balance_invoice_id: finalizedInvoice.id,
+      })
+      .eq("id", currentBooking.id);
+
+    if (invoiceSaveError) {
+      console.error(
+        "Balance invoice created but invoice ID could not be saved:",
+        invoiceSaveError
+      );
+    }
+  }
+}
+
+console.log(
+  `Deposit paid for booking ${bookingId}: ${session.id}`
+);}
+    }     
 
     return NextResponse.json({ received: true });
   } catch (error) {
