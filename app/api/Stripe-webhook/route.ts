@@ -184,19 +184,10 @@ const depositPaid = Math.min(
   currentBooking.deposit_cents ?? newAmountPaid
 );
 
-console.log("BALANCE INVOICE DEBUG", {
-  newAmountPaid,
-  deposit_cents: currentBooking.deposit_cents,
-  amount_paid_cents: currentBooking.amount_paid_cents,
-  depositPaid,
-});
+
 
 if (depositPaid > 0) {
-  console.log("CREATING DEPOSIT CREDIT ITEM", {
-    invoiceID: invoice.id,
-    depositPaid,
-    negativeAmount: -depositPaid,
-  });
+  
   await stripe.invoiceItems.create(
     {
       customer: customerId,
@@ -210,7 +201,7 @@ if (depositPaid > 0) {
     }
   );
 
-  console.log("DEPOSIT CREDIT ITEM CREATED");
+  
 }
 
     const finalizedInvoice = await stripe.invoices.finalizeInvoice(
