@@ -4,6 +4,9 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { Resend } from "resend";
+import Stripe from "stripe";
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 const resend = new Resend(process.env.RESEND_API_KEY);
 const siteUrl = 
   process.env.NEXT_PUBLIC_SITE_URL ??
@@ -360,36 +363,43 @@ if (emailError) {
   revalidatePath("/owner");
 
   redirect(`/owner/bookings/${id}`);
-}
-   async function collectBalance() {
+  }
+  async function resendBalanceInvoice() {
   "use server";
 
-  const response = await fetch("https://rollntrailerrentals.com/api/checkout", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      bookingId: id,
-      paymentType: "balance",
-    }),
-    cache: "no-store",
-  });
+  const supabase = createAdminClient();
 
-  const data = await response.json();
+  const { data: booking, error } = await supabase
+    .from("bookings")
+    .select("stripe_balance_invoice_id")
+    .eq("id", id)
+    .single();
 
- if (!response.ok || !data.url) {
-  console.error("Balance checkout failed:", data);
+  if (error || !booking) {
+    throw new Error("Unable to load booking.");
+  }
 
-  throw new Error(
-    typeof data.error === "string"
-      ? data.error
-      : JSON.stringify(data)
+  if (!booking.stripe_balance_invoice_id) {
+    throw new Error("No balance invoice has been created for this booking.");
+  }
+
+  const invoice = await stripe.invoices.retrieve(
+    booking.stripe_balance_invoice_id
   );
-}
 
+  if (invoice.status === "paid") {
+    throw new Error("This invoice has already been paid.");
+  }
 
-  redirect(data.url);
+  if (invoice.status !== "open") {
+    throw new Error(`Invoice cannot be resent because it is ${invoice.status}.`);
+  }
+
+  await stripe.invoices.sendInvoice(
+    booking.stripe_balance_invoice_id
+  );
+
+  revalidatePath(`/owner/bookings/${id}`);
 }
 
   async function markPickedUp() {
@@ -799,13 +809,13 @@ if (booking.insurance_path) {
            {booking.status === "active" && (
   <>
     {balance > 0 ? (
-      <form action={collectBalance} style={{ width: "100%" }}>
+      <form action={resendBalanceInvoice} style={{ width: "100%" }}>
         <button
           className="btn secondary"
           type="submit"
           style={{ width: "100%" }}
         >
-          Collect Remaining Balance — {formatMoney(balance)}
+          Resend Balance Invoice — {formatMoney(balance)}
         </button>
       </form>
     ) : (
