@@ -801,38 +801,42 @@ if (booking.insurance_path) {
   </>
 )}
 
-            {booking.status === "confirmed" && (
-              <form action={markPickedUp} style={{ width: "100%" }}>
-                <button className="btn secondary" type="submit" style={{ width: "100%" }}>
-                  Mark Picked Up
-                </button>
-              </form>
-            )}
+          {(booking.status === "confirmed" || booking.status === "active") &&
+  balance > 0 &&
+  booking.stripe_balance_invoice_id && (
+    <form action={resendBalanceInvoice} style={{ width: "100%" }}>
+      <button
+        className="btn secondary"
+        type="submit"
+        style={{ width: "100%" }}
+      >
+        Resend Balance Invoice — {formatMoney(balance)}
+      </button>
+    </form>
+  )}
 
-           {booking.status === "active" && (
-  <>
-    {balance > 0 && booking.stripe_balance_invoice_id ? (
-      <form action={resendBalanceInvoice} style={{ width: "100%" }}>
-        <button
-          className="btn secondary"
-          type="submit"
-          style={{ width: "100%" }}
-        >
-          Resend Balance Invoice — {formatMoney(balance)}
-        </button>
-      </form>
-    ) : (
-      <form action={markReturned} style={{ width: "100%" }}>
-        <button
-          className="btn secondary"
-          type="submit"
-          style={{ width: "100%" }}
-        >
-          Mark Returned
-        </button>
-      </form>
-    )}
-  </>
+{booking.status === "confirmed" && (
+  <form action={markPickedUp} style={{ width: "100%" }}>
+    <button
+      className="btn secondary"
+      type="submit"
+      style={{ width: "100%" }}
+    >
+      Mark Picked Up
+    </button>
+  </form>
+)}
+
+{booking.status === "active" && (
+  <form action={markReturned} style={{ width: "100%" }}>
+    <button
+      className="btn secondary"
+      type="submit"
+      style={{ width: "100%" }}
+    >
+      Mark Returned
+    </button>
+  </form>
 )}
 
 
