@@ -56,7 +56,8 @@ export default async function BookingDetailsPage({ params }: PageProps) {
       confirmation_code,
       pickup_at,
       return_at,
-      trailer_id
+      trailer_id,
+      stripe_balance_invoice_id
       `)
     .eq("id", id)
     .single();
@@ -220,7 +221,8 @@ if (emailError) {
     confirmation_code,
     pickup_at,
     return_at,
-    trailer_id
+    trailer_id,
+    stripe_balance_invoice_id
   `)
   .eq("id", id)
   .single();
@@ -536,6 +538,7 @@ if (emailError) {
       insurance_path,
       stripe_checkout_session_id,
       stripe_payment_intent_id,
+      stripe_balance_invoice_id,
       completed_at,
       cancelled_at,
       agreement_accepted_at,
@@ -808,7 +811,7 @@ if (booking.insurance_path) {
 
            {booking.status === "active" && (
   <>
-    {balance > 0 ? (
+    {balance > 0 && booking.stripe_balance_invoice_id ? (
       <form action={resendBalanceInvoice} style={{ width: "100%" }}>
         <button
           className="btn secondary"
