@@ -240,6 +240,54 @@ console.log(
   `Deposit paid for booking ${bookingId}: ${session.id}`
 );}
     }     
+if (event.type === "invoice.paid") {
+  const invoice = event.data.object as Stripe.Invoice;
+
+  const bookingId = invoice.metadata?.booking_id;
+
+  if (!bookingId) {
+    console.log("Paid invoice has no booking_id metadata.");
+  } else {
+    const supabase = createAdminClient();
+
+    const { data: currentBooking, error: lookupError } = await supabase
+      .from("bookings")
+      .select("id, total_cents, amount_paid_cents, stripe_balance_invoice_id")
+      .eq("id", bookingId)
+      .single();
+
+    if (lookupError || !currentBooking) {
+      console.error(
+        "Unable to find booking for paid balance invoice:",
+        lookupError
+      );
+    } else {
+      // Only update this booking if this is its balance invoice.
+      if (
+        !currentBooking.stripe_balance_invoice_id ||
+        currentBooking.stripe_balance_invoice_id === invoice.id
+      ) {
+        const { error: updateError } = await supabase
+          .from("bookings")
+          .update({
+            amount_paid_cents: currentBooking.total_cents ?? invoice.amount_paid,
+          })
+          .eq("id", bookingId);
+
+        if (updateError) {
+          console.error(
+            "Unable to update booking after balance payment:",
+            updateError
+          );
+        } else {
+          console.log(
+            `Balance paid for booking ${bookingId}: ${invoice.id}`
+          );
+        }
+      }
+    }
+  }
+}
 
     return NextResponse.json({ received: true });
   } catch (error) {
