@@ -242,14 +242,37 @@ console.log(
     }     
 if (event.type === "invoice.paid") {
   const invoice = event.data.object as Stripe.Invoice;
+  const supabase = createAdminClient();
 
-  const bookingId = invoice.metadata?.booking_id;
+  // First try booking_id metadata.
+  let bookingId = invoice.metadata?.booking_id || null;
+
+  // If the invoice has no booking_id metadata,
+  // find the booking using the Stripe balance invoice ID.
+  if (!bookingId) {
+    const { data: bookingByInvoice, error: invoiceLookupError } =
+      await supabase
+        .from("bookings")
+        .select("id")
+        .eq("stripe_balance_invoice_id", invoice.id)
+        .maybeSingle();
+
+    if (invoiceLookupError) {
+      console.error(
+        "Unable to find booking by Stripe invoice ID:",
+        invoiceLookupError
+      );
+    }
+
+    bookingId = bookingByInvoice?.id || null;
+  }
 
   if (!bookingId) {
-    console.log("Paid invoice has no booking_id metadata.");
+    console.log(
+      "Paid invoice could not be matched to a booking:",
+      invoice.id
+    );
   } else {
-    const supabase = createAdminClient();
-
     const { data: currentBooking, error: lookupError } = await supabase
       .from("bookings")
       .select("id, total_cents, amount_paid_cents, stripe_balance_invoice_id")
@@ -261,35 +284,32 @@ if (event.type === "invoice.paid") {
         "Unable to find booking for paid balance invoice:",
         lookupError
       );
-    } else {
-      // Only update this booking if this is its balance invoice.
-      if (
-        !currentBooking.stripe_balance_invoice_id ||
-        currentBooking.stripe_balance_invoice_id === invoice.id
-      ) {
-        const { error: updateError } = await supabase
-          .from("bookings")
-          .update({
-            amount_paid_cents: currentBooking.total_cents ?? invoice.amount_paid,
-          })
-          .eq("id", bookingId);
+    } else if (
+      !currentBooking.stripe_balance_invoice_id ||
+      currentBooking.stripe_balance_invoice_id === invoice.id
+    ) {
+      const { error: updateError } = await supabase
+        .from("bookings")
+        .update({
+          amount_paid_cents:
+            currentBooking.total_cents ?? invoice.amount_paid,
+        })
+        .eq("id", bookingId);
 
-        if (updateError) {
-          console.error(
-            "Unable to update booking after balance payment:",
-            updateError
-          );
-        } else {
-          console.log(
-            `Balance paid for booking ${bookingId}: ${invoice.id}`
-          );
-        }
+      if (updateError) {
+        console.error(
+          "Unable to update booking after balance payment:",
+          updateError
+        );
+      } else {
+        console.log(
+          `Balance paid for booking ${bookingId}: ${invoice.id}`
+        );
       }
     }
   }
 }
-
-    return NextResponse.json({ received: true });
+return NextResponse.json({ received: true })
   } catch (error) {
     console.error("Stripe webhook error:", error);
 
