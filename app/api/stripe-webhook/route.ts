@@ -152,7 +152,7 @@ if (
       {
         customer: customerId,
         collection_method: "send_invoice",
-        due_date: pickupDueDate,
+        due_date: Math.max(pickupDueDate, Math.floor(Date.now() / 1000) + 3600),
         description: `Remaining balance for trailer rental ${currentBooking.confirmation_code}`,
         metadata: {
           booking_id: currentBooking.id,
