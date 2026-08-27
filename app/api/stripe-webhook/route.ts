@@ -8,31 +8,58 @@ export async function POST(request: Request) {
   try {
     const body = await request.text();
     const signature = request.headers.get("stripe-signature");
-    const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+  const bookingWebhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+const invoiceWebhookSecret = process.env.STRIPE_INVOICE_WEBHOOK_SECRET;
 
-    if (!signature || !webhookSecret) {
-      return NextResponse.json(
-        { error: "Webhook configuration is missing." },
-        { status: 400 }
-      );
-    }
+if (!signature) {
+  return NextResponse.json(
+    { error: "Stripe signature is missing." },
+    { status: 400 }
+  );
+}
 
-    let event: Stripe.Event;
+if (!bookingWebhookSecret && !invoiceWebhookSecret) {
+  return NextResponse.json(
+    { error: "Webhook configuration is missing." },
+    { status: 400 }
+  );
+}
 
-    try {
-      event = stripe.webhooks.constructEvent(
-        body,
-        signature,
-        webhookSecret
-      );
-    } catch (error) {
-      console.error("Stripe webhook signature error:", error);
+let event: Stripe.Event | null = null;
 
-      return NextResponse.json(
-        { error: "Invalid webhook signature." },
-        { status: 400 }
-      );
-    }
+if (bookingWebhookSecret) {
+  try {
+    event = stripe.webhooks.constructEvent(
+      body,
+      signature,
+      bookingWebhookSecret
+    );
+  } catch {
+    // Try the invoice webhook secret next.
+  }
+}
+
+if (!event && invoiceWebhookSecret) {
+  try {
+    event = stripe.webhooks.constructEvent(
+      body,
+      signature,
+      invoiceWebhookSecret
+    );
+  } catch {
+    // Neither secret matched.
+  }
+}
+
+if (!event) {
+  console.error("Stripe webhook signature verification failed.");
+
+  return NextResponse.json(
+    { error: "Invalid webhook signature." },
+    { status: 400 }
+  );
+}
+
 
     if (event.type === "checkout.session.completed") {
       const session = event.data.object as Stripe.Checkout.Session;
