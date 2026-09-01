@@ -203,10 +203,32 @@ export default async function ReservationPage({ params }: PageProps) {
       : "✓ $50 Deposit Paid"}
   </div>
 ) : (
-  <PayDepositButton bookingId={booking.id} />
+  booking.intake_completed_at &&
+  booking.agreement_accepted_at &&
+  booking.drivers_license_path &&
+  booking.insurance_path
+    ? (
+        <PayDepositButton bookingId={booking.id} />
+      )
+    : (
+        <div
+          style={{
+            marginTop: 16,
+            padding: 16,
+            border: "1px solid #7DFB00",
+            borderRadius: 12,
+          }}
+        >
+          <strong>Complete your rental intake before paying the deposit.</strong>
+          <p style={{ marginBottom: 0 }}>
+            Your rental agreement, driver's license, and insurance must all be
+            completed or uploaded first.
+          </p>
+        </div>
+      )
 )}
           <p style={{ lineHeight: 1.7 }}>
-            Questions or changes to your reservation? Call or text us at{" "}
+            Questions or ]anges to your reservation? Call or text us at{" "}
             <a
               href="tel:+17066996990"
               style={{

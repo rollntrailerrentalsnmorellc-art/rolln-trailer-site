@@ -21,7 +21,11 @@ export async function POST(request: Request) {
         status,
         amount_paid_cents,
         total_cents,
-        deposit_cents
+        deposit_cents,
+        intake_completed_at,
+        agreement_accepted_at,
+        drivers_license_path,
+        insurance_path
       `)
       .eq("id", bookingId)
       .single();
@@ -30,6 +34,24 @@ export async function POST(request: Request) {
       return NextResponse.json(
         { error: "Booking not found." },
         { status: 404 }
+      );
+    }
+
+    if (
+      paymentType !== "balance" &&
+      (
+        !booking.intake_completed_at ||
+        !booking.agreement_accepted_at ||
+        !booking.drivers_license_path ||
+        !booking.insurance_path
+      )
+    ) {
+      return NextResponse.json(
+        { 
+      error: 
+         "Please complete all rental intake requirements, including your agreement, driver's license, and insurance upload, before paying the deposit.",
+      },
+         { status: 400 }
       );
     }
 

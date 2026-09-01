@@ -80,6 +80,16 @@ export async function POST(request: Request) {
           confirmation_code,
           customer_name,
           customer_email,
+          customer_phone,
+          address,
+          city,
+          state,
+          zipcode,
+          tow_vehicle,
+          tow_rating_lbs,
+          intended_use,
+          emergency_contact_name,
+          emergency_contact_phone,
           pickup_at, 
           drivers_license_path, 
           insurance_path,
@@ -150,8 +160,21 @@ const updatedInsurancePath =
     : booking.insurance_path;
 
 const intakeIsComplete =
+  Boolean(booking.customer_name?.trim()) &&
+  Boolean(booking.customer_email?.trim()) &&
+  Boolean(booking.customer_phone?.trim()) &&
+  Boolean(booking.address?.trim()) &&
+  Boolean(booking.city?.trim()) &&
+  Boolean(booking.state?.trim()) &&
+  Boolean(booking.zipcode?.trim()) &&
+  Boolean(booking.tow_vehicle?.trim()) &&
+  Boolean(booking.tow_rating_lbs) &&
+  Boolean(booking.intended_use?.trim()) &&
+  Boolean(booking.emergency_contact_name?.trim()) &&
+  Boolean(booking.emergency_contact_phone?.trim()) &&
   Boolean(updatedDriversLicensePath) &&
-  Boolean(updatedInsurancePath);
+  Boolean(updatedInsurancePath) &&
+  Boolean(booking.agreement_accepted_at);
 
 const updateData = {
   ...(documentType === "drivers_license"

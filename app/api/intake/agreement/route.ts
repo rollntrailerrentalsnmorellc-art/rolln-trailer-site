@@ -45,7 +45,7 @@ export async function POST(request: Request) {
     const { data: booking, error: bookingError } =
       await supabase
         .from("bookings")
-        .select("id, agreement_accepted_at")
+        .select("id, agreement_accepted_at, drivers_license_path, insurance_path")
         .eq("confirmation_code", confirmationCode)
         .single();
 
@@ -65,12 +65,21 @@ export async function POST(request: Request) {
 
     const now = new Date().toISOString();
 
+   const intakeIsComplete =
+     Boolean(booking.drivers_license_path) &&
+      Boolean(booking.insurance_path);
+
     const { error: updateError } = await supabase
       .from("bookings")
       .update({
         agreement_signature: signature,
         agreement_accepted_at: now,
         agreement_version: agreementVersion,
+        ...(intakeIsComplete
+          ? {
+              intake_completed_at: now,
+            }
+          : {}),
       })
       .eq("id", booking.id);
 
