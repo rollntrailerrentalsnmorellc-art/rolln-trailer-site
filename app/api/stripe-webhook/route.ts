@@ -175,6 +175,13 @@ if (
     const pickupDueDate = Math.floor(
       new Date(currentBooking.pickup_at).getTime() / 1000
     );
+    console.log("Starting balance invoice creation", {
+      bookingId: currentBooking.id,
+      customerId,
+      totalCents: currentBooking.total_cents,
+      depositCents: currentBooking.deposit_cents,
+      amountPaid: newAmountPaid,
+    });
     const invoice = await stripe.invoices.create(
       {
         customer: customerId,
@@ -246,6 +253,11 @@ if (depositPaid > 0) {
         idempotencyKey: `balance-invoice-send-${currentBooking.id}`,
       }
     );
+    
+    console.log("Balance invoice sent", {
+      bookingId: currentBooking.id,
+      invoiceId: finalizedInvoice.id,
+    });
 
     const { error: invoiceSaveError } = await supabase
       .from("bookings")
