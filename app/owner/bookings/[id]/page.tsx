@@ -426,6 +426,59 @@ if (emailError) {
 
     redirect(`/owner/bookings/${id}`);
   }
+
+  async function recordBalancePaidOffline() {
+    "use server";
+
+    const supabase = createAdminClient();
+
+    const { data: currentBooking, error: bookingError } = await supabase
+      .from("bookings")
+      .select("total_cents, amount_paid_cents, stripe_balance_invoice_id")
+      .eq("id", id)
+      .single();
+
+    if (bookingError || !currentBooking) {
+      throw new Error("Unable to load the booking payment balance.");
+    }
+
+    const total = currentBooking.total_cents ?? 0;
+    const amountPaid = currentBooking.amount_paid_cents ?? 0;
+
+    if (amountPaid >= total) {
+      redirect(`/owner/bookings/${id}`);
+    }
+
+    if (currentBooking.stripe_balance_invoice_id) {
+      const invoice = await stripe.invoices.retrieve(
+        currentBooking.stripe_balance_invoice_id
+      );
+
+      if (invoice.status === "open") {
+        await stripe.invoices.voidInvoice(invoice.id);
+      } else if (invoice.status === "paid") {
+        redirect(`/owner/bookings/${id}`);
+      }
+    }
+
+    const { error: updateError } = await supabase
+      .from("bookings")
+      .update({ amount_paid_cents: total })
+      .eq("id", id);
+
+    if (updateError) {
+      throw new Error(
+        `Unable to record offline payment: ${updateError.message}`
+      );
+    }
+
+    revalidatePath(`/owner/bookings/${id}`);
+    revalidatePath("/owner/bookings");
+    revalidatePath("/owner");
+
+    redirect(`/owner/bookings/${id}`);
+  }
+
   async function markReturned() {
   "use server";
 
@@ -828,15 +881,41 @@ if (booking.insurance_path) {
 )}
 
 {booking.status === "active" && (
-  <form action={markReturned} style={{ width: "100%" }}>
-    <button
-      className="btn secondary"
-      type="submit"
-      style={{ width: "100%" }}
-    >
-      Mark Returned
-    </button>
-  </form>
+  <>
+    {balance > 0 ? (
+      <>
+        <div
+          className="notice"
+          style={{ width: "100%", gridColumn: "1 / -1" }}
+        >
+          Record or collect the remaining {formatMoney(balance)} balance before
+          marking this rental returned.
+        </div>
+        <form
+          action={recordBalancePaidOffline}
+          style={{ width: "100%" }}
+        >
+          <button
+            className="btn secondary"
+            type="submit"
+            style={{ width: "100%" }}
+          >
+            Record Balance Paid Offline — {formatMoney(balance)}
+          </button>
+        </form>
+      </>
+    ) : (
+      <form action={markReturned} style={{ width: "100%" }}>
+        <button
+          className="btn secondary"
+          type="submit"
+          style={{ width: "100%" }}
+        >
+          Mark Returned
+        </button>
+      </form>
+    )}
+  </>
 )}
 
 
