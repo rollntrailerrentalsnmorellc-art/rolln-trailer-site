@@ -64,7 +64,7 @@ export default async function Owner() {
     returnResult,
     maintenanceResult,
     documentResult,
-    paymentResult,
+    monthlyRevenueResult,
     recentBookingsResult,
   ] = await Promise.all([
     supabase
@@ -103,8 +103,12 @@ export default async function Owner() {
       .select('*', { count: 'exact', head: true }),
 
     supabase
-      .from('payments')
-      .select('*', { count: 'exact', head: true }),
+      .from('bookings')
+      .select('amount_paid_cents')
+      .gte(
+        'created_at',
+        new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
+      ),
 
     supabase
       .from('bookings')
@@ -116,6 +120,10 @@ export default async function Owner() {
   ])
 
   const recentBookings = recentBookingsResult.data ?? []
+  const revenueMonth = (monthlyRevenueResult.data ?? []).reduce(
+    (sum, booking) => sum + (booking.amount_paid_cents ?? 0),
+    0
+  ) / 100
 
   function formatDate(value: string | null) {
     if (!value) return 'Not scheduled'
@@ -147,7 +155,7 @@ export default async function Owner() {
            activeRentals={activeResult.count ?? 0}
            pickupsToday={pickupResult.count ?? 0}
            returnsToday={returnResult.count ?? 0}
-           revenueMonth={0}
+           revenueMonth={revenueMonth}
         />
 
           <div
