@@ -42,18 +42,20 @@ export default function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
       aria-roledescription="carousel"
       aria-label="Roll'N Trailer Rentals fleet photos"
     >
-      <Image
-        key={slide.src}
-        className="hero-carousel-image"
-        src={slide.src}
-        alt={slide.alt}
-        fill
-        sizes="(min-width: 760px) 48vw, 100vw"
-        priority={active === 0}
-      />
+      <div className="hero-carousel-media">
+        <Image
+          key={slide.src}
+          className="hero-carousel-image"
+          src={slide.src}
+          alt={slide.alt}
+          fill
+          sizes="(min-width: 760px) 48vw, 100vw"
+          priority={active === 0}
+        />
 
-      <button className="carousel-arrow carousel-arrow-left" type="button" onClick={showPrevious} aria-label="Previous photo">‹</button>
-      <button className="carousel-arrow carousel-arrow-right" type="button" onClick={showNext} aria-label="Next photo">›</button>
+        <button className="carousel-arrow carousel-arrow-left" type="button" onClick={showPrevious} aria-label="Previous photo">‹</button>
+        <button className="carousel-arrow carousel-arrow-right" type="button" onClick={showNext} aria-label="Next photo">›</button>
+      </div>
 
       <div className="hero-label" aria-live="polite">
         <strong>{slide.title}</strong><br />
