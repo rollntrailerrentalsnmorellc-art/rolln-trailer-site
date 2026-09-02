@@ -4,16 +4,16 @@
 @media(min-width:760px){body{padding-bottom:0}.desktop-nav{display:flex}.mobilebar{display:none}.hero-grid{grid-template-columns:1.05fr .95fr}.hero-copy{padding:42px}.actions{display:flex}.grid.three{grid-template-columns:repeat(3,1fr)}.steps{grid-template-columns:repeat(3,1fr)}.portal-grid{grid-template-columns:repeat(3,1fr)}}
 
 /* Main-page fleet photo carousel */
-.hero-photo{min-height:340px}
-.hero-carousel{position:absolute;inset:0;overflow:hidden}
+.hero-photo{min-height:0;position:relative}
+.hero-carousel{position:relative;display:grid;overflow:hidden}
+.hero-carousel-media{position:relative;min-height:300px;aspect-ratio:4/3;overflow:hidden;background:#050705}
 .hero-carousel-image{width:100%;height:100%;object-fit:cover;animation:heroFade .45s ease}
-.hero-carousel:after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent 45%,rgba(3,6,3,.42));pointer-events:none}
-.hero-carousel .hero-label{z-index:2}
+.hero-carousel .hero-label{position:static;z-index:2;min-height:116px;padding:14px 16px 13px;border:0;border-top:1px solid rgba(255,255,255,.12);border-radius:0;background:linear-gradient(180deg,#111611,#090c09)}
 .carousel-arrow{position:absolute;z-index:3;top:44%;width:44px;height:44px;border:1px solid rgba(255,255,255,.22);border-radius:50%;background:rgba(5,8,5,.75);color:#fff;font-size:2rem;line-height:1;cursor:pointer;display:grid;place-items:center}
 .carousel-arrow:hover,.carousel-arrow:focus-visible{background:var(--green);color:#051006;outline:2px solid #fff;outline-offset:2px}
 .carousel-arrow-left{left:12px}
 .carousel-arrow-right{right:12px}
-.carousel-dots{display:flex;align-items:center;gap:7px;margin-top:10px}
+.carousel-dots{display:flex;align-items:center;flex-wrap:wrap;gap:7px;margin-top:10px}
 .carousel-dot{width:9px;height:9px;padding:0;border:0;border-radius:999px;background:#7b847b;cursor:pointer;transition:width .2s ease,background .2s ease}
 .carousel-dot.active{width:25px;background:var(--green)}
 @keyframes heroFade{from{opacity:.25;transform:scale(1.01)}to{opacity:1;transform:scale(1)}}
