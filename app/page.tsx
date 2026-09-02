@@ -7,11 +7,18 @@ export const revalidate = 60;
 
 const heroSlides = [
  {src:'/images/tilt1.jpeg',alt:'22 foot tilt deck equipment trailer ready for rent in Augusta Georgia',title:'22 ft Tilt Deck Equipment Hauler',caption:'Ready for tractors, skid steers and heavy equipment.'},
- {src:'/images/tilt2.jpeg',alt:'Tilt deck equipment trailer connected to a truck with the deck lowered',title:'Tilt deck in action',caption:'Low-angle loading without separate ramps.'},
+ {src:'/images/tilt-in-use-skid-steer-loading.jpeg',alt:'Case compact track loader driving onto the tilt deck equipment trailer',title:'Heavy equipment loading',caption:'The tilt deck keeps loading low, simple and ramp-free.'},
+ {src:'/images/dump-in-use-brush.jpeg',alt:'Blue dump trailer loaded with brush and tree limbs',title:'Brush hauling made easier',caption:'Load up yard debris and keep the cleanup moving.'},
  {src:'/images/car1.jpeg',alt:'20 foot steel deck car hauler trailer ready for rent',title:'20 ft Steel Deck Car Hauler',caption:'Built for vehicles, UTVs and compact equipment.'},
+ {src:'/images/tilt-in-use-skid-steer-front.jpeg',alt:'Case compact track loader secured on the tilt deck equipment trailer',title:'Built for the big jobs',caption:'14K capacity for skid steers, tractors and heavy equipment.'},
+ {src:'/images/dump-in-use-mulch-yard.jpeg',alt:'Blue dump trailer loaded with mulch at a landscape material yard',title:'Loaded and ready to roll',caption:'A full load of mulch without the mess in your truck bed.'},
+ {src:'/images/tilt2.jpeg',alt:'Tilt deck equipment trailer connected to a truck with the deck lowered',title:'Tilt deck in action',caption:'Low-angle loading without separate ramps.'},
+ {src:'/images/tilt-in-use-skid-steer-loaded.jpeg',alt:'Case compact track loader fully loaded on the tilt deck equipment trailer',title:'Ready for transport',caption:'A full-width deck and dependable tandem-axle support.'},
+ {src:'/images/dump-in-use-delivery.jpeg',alt:'Blue dump trailer delivering mulch at a customer driveway',title:'Bring the job to you',caption:'Mulch and landscaping loads delivered right where you need them.'},
  {src:'/images/car4.jpeg',alt:'Steel deck car hauler connected to a pickup truck',title:'Hook up and get rolling',caption:'A full-width steel deck for dependable hauling.'},
+ {src:'/images/dump-in-use-unloading.jpeg',alt:'Blue dump trailer raised while unloading a load of dark mulch',title:'Unload in minutes',caption:'Hydraulic dumping turns a heavy unload into an easy finish.'},
  {src:'/images/dump1.jpeg',alt:'5 by 10 blue dump trailer ready for landscaping work',title:'5×10 Dump Trailer',caption:'Great for landscaping, cleanup, mulch and debris.'},
- {src:'/images/dump4.jpeg',alt:'Blue dump trailer with its hydraulic bed raised',title:'Hydraulic dumping power',caption:'Unload the job quickly and get back on the road.'},
+ {src:'/images/dump-in-use-material-yard.jpeg',alt:'Blue dump trailer loaded with black mulch at a material yard',title:'Built for real work',caption:'From the material yard to the job site and back again.'},
 ];
 
 export default async function Home(){
