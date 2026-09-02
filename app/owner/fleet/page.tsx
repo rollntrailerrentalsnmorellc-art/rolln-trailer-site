@@ -25,9 +25,12 @@ type Booking = {
   id: string;
   trailer_id: string | null;
   confirmation_code: string | null;
+  customer_name: string | null;
   status: string;
   pickup_at: string;
   return_at: string;
+  total_cents: number | null;
+  amount_paid_cents: number | null;
 };
 
 async function requireOwner() {
@@ -102,10 +105,9 @@ export default async function FleetPage() {
       .order("sort_order"),
     supabase
       .from("bookings")
-      .select("id, trailer_id, confirmation_code, status, pickup_at, return_at")
-      .gte("return_at", now)
-      .in("status", ["confirmed", "active", "pending_payment"])
-      .order("pickup_at"),
+      .select("id, trailer_id, confirmation_code, customer_name, status, pickup_at, return_at, total_cents, amount_paid_cents")
+      .order("pickup_at", { ascending: false })
+      .limit(250),
   ]);
 
   const trailers = (trailerResult.data ?? []) as Trailer[];
@@ -127,6 +129,18 @@ export default async function FleetPage() {
       <div style={{ display: "grid", gap: 18 }}>
         {trailers.map((trailer) => {
           const trailerBookings = bookings.filter((booking) => booking.trailer_id === trailer.id);
+          const upcomingBookings = trailerBookings
+            .filter((booking) =>
+              booking.return_at >= now &&
+              ["confirmed", "active", "pending_payment"].includes(booking.status)
+            )
+            .sort((a, b) => a.pickup_at.localeCompare(b.pickup_at));
+          const rentalHistory = trailerBookings
+            .filter((booking) =>
+              booking.return_at < now ||
+              ["completed", "cancelled"].includes(booking.status)
+            )
+            .slice(0, 10);
           const image = trailer.image_urls?.[0] || fallbackImages[trailer.slug]?.[0] || "/images/Logo.png";
 
           return (
@@ -163,15 +177,59 @@ export default async function FleetPage() {
 
               <div style={{ borderTop: "1px solid var(--line)", paddingTop: 14 }}>
                 <strong>Upcoming schedule</strong>
-                {trailerBookings.length === 0 ? (
+                {upcomingBookings.length === 0 ? (
                   <p className="muted">No active or upcoming rentals.</p>
                 ) : (
                   <div style={{ display: "grid", gap: 8, marginTop: 10 }}>
-                    {trailerBookings.slice(0, 4).map((booking) => (
+                    {upcomingBookings.slice(0, 4).map((booking) => (
                       <Link key={booking.id} className="chip" href={`/owner/bookings/${booking.id}`} style={{ textDecoration: "none" }}>
                         {booking.confirmation_code || booking.id.slice(0, 8)} · {formatDate(booking.pickup_at)}–{formatDate(booking.return_at)} · {booking.status.replaceAll("_", " ")}
                       </Link>
                     ))}
+                  </div>
+                )}
+              </div>
+
+              <div style={{ borderTop: "1px solid var(--line)", paddingTop: 14 }}>
+                <strong>Rental history</strong>
+                {rentalHistory.length === 0 ? (
+                  <p className="muted">No previous rentals for this trailer.</p>
+                ) : (
+                  <div style={{ overflowX: "auto", marginTop: 10 }}>
+                    <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 720 }}>
+                      <thead>
+                        <tr style={{ textAlign: "left" }}>
+                          <th style={{ padding: 10 }}>Rental</th>
+                          <th style={{ padding: 10 }}>Customer</th>
+                          <th style={{ padding: 10 }}>Dates</th>
+                          <th style={{ padding: 10 }}>Status</th>
+                          <th style={{ padding: 10 }}>Payment</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {rentalHistory.map((booking) => {
+                          const total = booking.total_cents ?? 0;
+                          const paid = booking.amount_paid_cents ?? 0;
+                          const balance = Math.max(total - paid, 0);
+
+                          return (
+                            <tr key={booking.id} style={{ borderTop: "1px solid var(--line)" }}>
+                              <td style={{ padding: 10 }}>
+                                <Link href={`/owner/bookings/${booking.id}`} style={{ color: "var(--green)", fontWeight: 800 }}>
+                                  {booking.confirmation_code || booking.id.slice(0, 8)}
+                                </Link>
+                              </td>
+                              <td style={{ padding: 10 }}>{booking.customer_name || "Unknown"}</td>
+                              <td style={{ padding: 10 }}>{formatDate(booking.pickup_at)}–{formatDate(booking.return_at)}</td>
+                              <td style={{ padding: 10, textTransform: "capitalize" }}>{booking.status.replaceAll("_", " ")}</td>
+                              <td style={{ padding: 10, color: balance > 0 ? "#f59e0b" : "var(--green)" }}>
+                                {money(paid)} paid · {money(balance)} due
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
                   </div>
                 )}
               </div>
