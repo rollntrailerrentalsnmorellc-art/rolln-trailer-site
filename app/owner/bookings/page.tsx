@@ -182,8 +182,8 @@ export default async function BookingsPage() {
               </p>
             </div>
 
-            <Link className="btn secondary" href="/owner">
-              Back to Dashboard
+            <Link className="btn" href="/owner/bookings/new">
+              ＋ New Booking
             </Link>
           </div>
 
