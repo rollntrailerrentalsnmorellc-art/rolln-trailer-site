@@ -5,11 +5,9 @@ import { TZDate } from "@date-fns/tz"
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-const siteUrl = 
-process.env.NEXT_PUBLIC_SITE_URL || 
-process.env.VERCEL_URL
-  ? `https://${process.env.VERCEL_URL}`
-  : "https://rollntrailerrentals.com";
+const siteUrl =
+  process.env.NEXT_PUBLIC_SITE_URL ||
+  (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "https://rollntrailerrentals.com");
 
 type BookingRequest = {
   trailerId?: string;
@@ -236,7 +234,7 @@ const totalCents = subtotalCents;
     const { error: emailError } = await resend.emails.send({
   from: "Roll'N Trailer Rentals <bookings@rollntrailerrentals.com>",
   to: [customerEmail.trim().toLowerCase()],
-  replyTo: "Rollntrailerrentalsnmorellc@gmail.com",
+  replyTo: "rollntrailer@gmail.com",
   subject: `Rental request received — ${booking.confirmation_code}`,
   html: `
     <div style="margin:0; padding:24px; background:#f3f4f6; font-family:Arial,Helvetica,sans-serif; color:#111827;">
@@ -342,7 +340,7 @@ if (emailError) {
 }
 const { error: ownerEmailError } = await resend.emails.send({
   from: "Roll'N Trailer Rentals <bookings@rollntrailerrentals.com>",
-  to: ["Rollntrailerrentalsnmorellc@gmail.com"],
+  to: ["rollntrailer@gmail.com"],
   replyTo: customerEmail.trim().toLowerCase(),
   subject: `New booking request — ${trailer?.name ?? "Trailer"} — ${booking.confirmation_code}`,
   html: `
