@@ -4,6 +4,7 @@ import PayDepositButton from "./PayDepositButton";
 import PaymentSuccessRefresh from "./PaymentSuccessRefresh";
 import IntakeUploadForm from "./IntakeUploadForm";
 import RentalAgreementForm from "./RentalAgreementForm";
+import { parseRentalAddOns } from "@/lib/addons";
 
 export const dynamic = "force-dynamic";
 
@@ -44,7 +45,9 @@ export default async function ReservationPage({ params }: PageProps) {
       insurance_uploaded_at,
       intake_completed_at,
       agreement_accepted_at,
-      card_on_file_authorized_at
+      card_on_file_authorized_at,
+      owner_notes,
+      total_cents
     `)
     .eq("confirmation_code", code)
     .single();
@@ -52,6 +55,8 @@ export default async function ReservationPage({ params }: PageProps) {
   if (error || !booking) {
     notFound();
   }
+
+  const selectedAddOns = parseRentalAddOns(booking.owner_notes);
 
   let trailerName = "Trailer";
 
@@ -171,6 +176,8 @@ export default async function ReservationPage({ params }: PageProps) {
             <p style={{ marginBottom: 0 }}>
               <strong>Return:</strong> {formatDate(booking.return_at)}
             </p>
+            {selectedAddOns.length > 0 && <div style={{ marginTop: 18 }}><strong>Rental add-ons:</strong><ul style={{ marginBottom: 0 }}>{selectedAddOns.map((item) => <li key={item.id}>{item.name} — ${(item.pricePerDayCents / 100).toFixed(2)}/day</li>)}</ul></div>}
+            <p><strong>Quoted rental total:</strong> ${((booking.total_cents ?? 0) / 100).toFixed(2)}</p>
           </div>
 
         <IntakeUploadForm
