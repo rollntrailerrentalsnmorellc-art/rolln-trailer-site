@@ -53,7 +53,7 @@ export default async function CustomersPage({
     return (
       <main><section><div className="container"><div className="notice">
         <h1>Owner sign-in required</h1>
-        <Link className="btn" href="/login">Owner Sign-In</Link>
+        <Link className="btn" href="/owner/login">Owner Sign-In</Link>
       </div></div></section></main>
     );
   }
