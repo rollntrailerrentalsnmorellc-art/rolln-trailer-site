@@ -277,8 +277,12 @@ export default function RentalAgreementForm({
 
   <h4>15. Credit/Debit Card Authorization</h4>
   <p>
-    Renter authorizes Company to charge any payment method on file for all
-    amounts owed under this Agreement.
+    Renter authorizes Company to securely keep the payment method used for this
+    rental on file with its payment processor and to charge it after checkout
+    for all documented amounts owed under this Agreement, including approved
+    rental extensions, additional rental time, damage, cleaning, late fees,
+    recovery costs, and unpaid balances. Company will provide an electronic
+    receipt or invoice for each additional charge.
   </p>
 
   <h4>16. Deposit</h4>
