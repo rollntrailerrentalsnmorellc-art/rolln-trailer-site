@@ -2,6 +2,7 @@
 
 import { FormEvent, Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import { rentalAddOns } from "@/lib/addons";
 
 function formatSelectedDate(value: string | null) {
   if (!value) return "Not selected";
@@ -51,6 +52,7 @@ function BookingForm() {
       zipCode: String(formData.get("zipCode") || ""),
       towVehicle: String(formData.get("towVehicle") || ""),
       towRatingLbs: Number(formData.get("towRatingLbs") || 0),
+      addOnIds: formData.getAll("addOnIds").map(String),
       intendedUse: String(formData.get("intendedUse") || ""),
       emergencyContactName: String(
         formData.get("emergencyContactName") || ""
@@ -267,16 +269,21 @@ function BookingForm() {
             />
 
             <label htmlFor="towRatingLbs">
-              Vehicle towing capacity in pounds
+              Vehicle towing capacity in pounds (from the owner&apos;s manual)
             </label>
             <input
               id="towRatingLbs"
               name="towRatingLbs"
               type="number"
-              min="0"
+              min="1000"
+              max="40000"
+              step="1"
               inputMode="numeric"
               required
             />
+            <p className="muted" style={{ marginTop: -8 }}>
+              Your vehicle&apos;s rating must meet or exceed the trailer&apos;s GVWR.
+            </p>
 
             <label htmlFor="intendedUse">
               What will you use the trailer for?
@@ -287,6 +294,18 @@ function BookingForm() {
               rows={4}
               required
             />
+
+            <hr style={{ margin: "28px 0" }} />
+            <h2>Optional Rental Add-Ons</h2>
+            <p className="muted">Prices are per rental day and included in your quote. Subject to availability and compatibility.</p>
+            <div style={{ display: "grid", gap: 12 }}>
+              {rentalAddOns.map((addOn) => (
+                <label key={addOn.id} className="panel" style={{ display: "flex", gap: 12, alignItems: "flex-start", cursor: "pointer" }}>
+                  <input type="checkbox" name="addOnIds" value={addOn.id} style={{ width: 22, height: 22, marginTop: 2 }} />
+                  <span><strong>{addOn.name} — ${(addOn.pricePerDayCents / 100).toFixed(0)}/day</strong><span className="muted" style={{ display: "block", marginTop: 4 }}>{addOn.description}</span></span>
+                </label>
+              ))}
+            </div>
 
             <hr style={{ margin: "28px 0" }} />
 
