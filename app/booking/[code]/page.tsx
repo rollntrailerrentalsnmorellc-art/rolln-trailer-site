@@ -228,7 +228,7 @@ export default async function ReservationPage({ params }: PageProps) {
       )
 )}
           <p style={{ lineHeight: 1.7 }}>
-            Questions or ]anges to your reservation? Call or text us at{" "}
+            Questions or changes to your reservation? Call or text us at{" "}
             <a
               href="tel:+17066996990"
               style={{
