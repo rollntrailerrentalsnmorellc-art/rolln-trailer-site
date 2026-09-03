@@ -73,6 +73,32 @@ async function setPublicVisibility(formData: FormData) {
   revalidatePath("/owner/fleet");
 }
 
+async function setOperationalStatus(formData: FormData) {
+  "use server";
+
+  await requireOwner();
+  const trailerId = String(formData.get("trailerId") ?? "");
+  const status = String(formData.get("status") ?? "");
+
+  if (!trailerId || !["available", "maintenance", "inactive"].includes(status)) {
+    throw new Error("A valid trailer and status are required.");
+  }
+
+  const updates = status === "inactive"
+    ? { status, is_public: false }
+    : { status };
+  const { error } = await createAdminClient()
+    .from("trailers")
+    .update(updates)
+    .eq("id", trailerId);
+
+  if (error) throw new Error(`Unable to update trailer status: ${error.message}`);
+
+  revalidatePath("/");
+  revalidatePath("/owner");
+  revalidatePath("/owner/fleet");
+}
+
 function formatDate(value: string) {
   return new Intl.DateTimeFormat("en-US", {
     month: "short",
@@ -151,7 +177,11 @@ export default async function FleetPage() {
                   <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", gap: 10 }}>
                     <h2 style={{ margin: 0 }}>{trailer.name}</h2>
                     <span className="chip" style={{ color: trailer.is_public ? "var(--green)" : "#f59e0b" }}>
-                      {trailer.is_public ? "Bookable online" : "Hidden from customers"}
+                      {trailer.status === "inactive"
+                        ? "Archived / sold"
+                        : trailer.is_public
+                          ? "Bookable online"
+                          : "Hidden from customers"}
                     </span>
                   </div>
                   <p className="muted">{trailer.description || "No description"}</p>
@@ -163,14 +193,30 @@ export default async function FleetPage() {
                     {trailer.payload_lbs ? <span className="chip">{trailer.payload_lbs.toLocaleString()} lb payload</span> : null}
                   </div>
                   <div className="actions">
-                    {trailer.is_public && <Link className="btn2" href={`/trailers/${trailer.slug}`}>View Customer Listing</Link>}
-                    <form action={setPublicVisibility}>
-                      <input type="hidden" name="trailerId" value={trailer.id} />
-                      <input type="hidden" name="isPublic" value={String(!trailer.is_public)} />
-                      <button className={trailer.is_public ? "btn2" : "btn"} type="submit">
-                        {trailer.is_public ? "Pause Online Bookings" : "Make Bookable Online"}
-                      </button>
-                    </form>
+                    {trailer.status !== "inactive" && (
+                      <>
+                        {trailer.is_public && <Link className="btn2" href={`/trailers/${trailer.slug}`}>View Customer Listing</Link>}
+                        <form action={setPublicVisibility}>
+                          <input type="hidden" name="trailerId" value={trailer.id} />
+                          <input type="hidden" name="isPublic" value={String(!trailer.is_public)} />
+                          <button className={trailer.is_public ? "btn2" : "btn"} type="submit">
+                            {trailer.is_public ? "Pause Online Bookings" : "Make Bookable Online"}
+                          </button>
+                        </form>
+                        <form action={setOperationalStatus}>
+                          <input type="hidden" name="trailerId" value={trailer.id} />
+                          <input type="hidden" name="status" value="inactive" />
+                          <button className="btn2" type="submit">Archive Sold Trailer</button>
+                        </form>
+                      </>
+                    )}
+                    {trailer.status === "inactive" && (
+                      <form action={setOperationalStatus}>
+                        <input type="hidden" name="trailerId" value={trailer.id} />
+                        <input type="hidden" name="status" value="available" />
+                        <button className="btn2" type="submit">Restore Trailer Record</button>
+                      </form>
+                    )}
                   </div>
                 </div>
               </div>
