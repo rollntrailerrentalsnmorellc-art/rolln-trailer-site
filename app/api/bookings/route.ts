@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { Resend } from "resend";
 import { TZDate } from "@date-fns/tz"
+import { addOnTotal, selectRentalAddOns, serializeRentalAddOns } from "@/lib/addons";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -18,6 +19,7 @@ type BookingRequest = {
   customerPhone?: string;
   towVehicle?: string;
   towRatingLbs?: number;
+  addOnIds?: string[];
   intendedUse?: string;
   agreementAccepted?: boolean;
 };
@@ -49,6 +51,7 @@ export async function POST(request: Request) {
       customerPhone,
       towVehicle,
       towRatingLbs,
+      addOnIds,
       intendedUse,
       agreementAccepted,
     } = body;
@@ -123,6 +126,46 @@ const returnDate = parseEasternDateTime(returnAt);
 
     const supabase = createAdminClient();
 
+    const { data: trailer, error: trailerError } = await supabase
+      .from("trailers")
+      .select("name, daily_rate_cents, weekly_rate_cents, deposit_cents, gvwr_lbs, status, is_public")
+      .eq("id", trailerId)
+      .single();
+
+    if (trailerError || !trailer || trailer.status === "inactive" || !trailer.is_public) {
+      return NextResponse.json(
+        { error: "This trailer is not currently available for online booking." },
+        { status: 400 }
+      );
+    }
+
+    if (
+      typeof towRatingLbs !== "number" ||
+      !Number.isInteger(towRatingLbs) ||
+      towRatingLbs < 1000 ||
+      towRatingLbs > 40000
+    ) {
+      return NextResponse.json(
+        { error: "Enter the vehicle towing capacity shown in the owner's manual (1,000–40,000 lbs)." },
+        { status: 400 }
+      );
+    }
+
+    if (trailer.gvwr_lbs && towRatingLbs < trailer.gvwr_lbs) {
+      return NextResponse.json(
+        { error: `This tow vehicle is rated for ${towRatingLbs.toLocaleString()} lbs, below the ${trailer.gvwr_lbs.toLocaleString()} lb rating required for this trailer.` },
+        { status: 400 }
+      );
+    }
+
+    if (addOnIds && (!Array.isArray(addOnIds) || addOnIds.length > 6)) {
+      return NextResponse.json({ error: "The selected add-ons are invalid." }, { status: 400 });
+    }
+    const selectedAddOns = selectRentalAddOns(addOnIds);
+    if ((addOnIds?.length ?? 0) !== selectedAddOns.length) {
+      return NextResponse.json({ error: "One or more selected add-ons are unavailable." }, { status: 400 });
+    }
+
     const { data: conflictingBookings, error: availabilityError } =
       await supabase
         .from("bookings")
@@ -159,16 +202,6 @@ const returnDate = parseEasternDateTime(returnAt);
       );
     }
 
-      const { data: trailer, error: trailerError } = await supabase
-  .from("trailers")
-  .select("name, daily_rate_cents, weekly_rate_cents, deposit_cents")
-  .eq("id", trailerId)
-  .single();
-
-if (trailerError) {
-  console.error("Unable to load trailer:", trailerError);
-}
-
 const rentalMs = returnDate.getTime() - pickupDate.getTime();
 const rentalDays = Math.max(1, Math.ceil(rentalMs / (24 * 60 * 60 * 1000)));
 
@@ -189,7 +222,12 @@ if (weeklyRate && rentalDays >= 7) {
   subtotalCents = rentalDays * dailyRate;
 }
 
+const addOnsCents = addOnTotal(selectedAddOns, rentalDays);
+subtotalCents += addOnsCents;
 const totalCents = subtotalCents;
+const addOnSummary = selectedAddOns.length
+  ? selectedAddOns.map((item) => `${item.name} ($${(item.pricePerDayCents / 100).toFixed(2)}/day)`).join("<br>")
+  : "None";
 
     const confirmationCode = createConfirmationCode();
 
@@ -208,12 +246,9 @@ const totalCents = subtotalCents;
             .toLowerCase(),
           customer_phone: customerPhone.trim(),
           tow_vehicle: towVehicle?.trim() || null,
-          tow_rating_lbs:
-            typeof towRatingLbs === "number" &&
-            towRatingLbs > 0
-              ? towRatingLbs
-              : null,
+          tow_rating_lbs: towRatingLbs,
           intended_use: intendedUse?.trim() || null,
+          owner_notes: serializeRentalAddOns(selectedAddOns),
           subtotal_cents: subtotalCents,
           deposit_cents: depositAmount,
           total_cents: totalCents,
@@ -307,6 +342,8 @@ const totalCents = subtotalCents;
             This request is not yet approved. We will review it and contact you once it has been approved or declined.
           </p>
 
+          <p style="font-size:15px; line-height:1.7;"><strong>Selected add-ons:</strong><br>${addOnSummary}</p>
+
           <p style="font-size:15px; line-height:1.7;">
             Questions? Call or text us at
             <a href="tel:+17066996990" style="color:#7DFB00; font-weight:700; text-decoration:none;">
@@ -399,6 +436,7 @@ const { error: ownerEmailError } = await resend.emails.send({
                 : "Not provided"
             }<br>
             <strong>Intended use:</strong> ${intendedUse?.trim() || "Not provided"}<br>
+            <strong>Add-ons:</strong><br>${addOnSummary}<br>
             <strong>Confirmation:</strong>
             <span style="color:#7DFB00; font-weight:800;">
               ${booking.confirmation_code}
