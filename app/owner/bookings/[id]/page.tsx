@@ -290,7 +290,7 @@ if (trailerError) {
     const { error: emailError } = await resend.emails.send({
   from: "Roll'N Trailer Rentals <bookings@rollntrailerrentals.com>",
   to: [currentBooking.customer_email],
-  replyTo: "Rollntrailerrentalsnmorellc@gmail.com",
+  replyTo: "rollntrailer@gmail.com",
   subject: `Your trailer rental is approved — ${currentBooking.confirmation_code}`,
   html: `
   <div style="margin:0; padding:24px; background:#f3f4f6; font-family:Arial,Helvetica,sans-serif; color:#17202a;">
@@ -456,7 +456,7 @@ if (trailerError) {
   const { error: emailError } = await resend.emails.send({
   from: "Roll'N Trailer Rentals <bookings@rollntrailerrentals.com>",
   to: [currentBooking.customer_email],
-  replyTo: "Rollntrailerrentalsnmorellc@gmail.com",
+  replyTo: "rollntrailer@gmail.com",
   subject: `Your trailer rental request — ${currentBooking.confirmation_code}`,
   html: `
     <div style="margin:0; padding:24px; background:#f3f4f6; font-family:Arial,Helvetica,sans-serif; color:#111827;">
