@@ -125,6 +125,10 @@ const { error } = await supabase
   .update({
     amount_paid_cents: newAmountPaid,
     stripe_checkout_session_id: session.id,
+    stripe_customer_id:
+      typeof session.customer === "string"
+        ? session.customer
+        : session.customer?.id ?? null,
     stripe_payment_intent_id:
       typeof session.payment_intent === "string"
         ? session.payment_intent
@@ -275,79 +279,147 @@ if (depositPaid > 0) {
   }
 }
 
-console.log(
-  `Deposit paid for booking ${bookingId}: ${session.id}`
-);}
-    }     
-if (event.type === "invoice.paid") {
-  const invoice = event.data.object as Stripe.Invoice;
-  const supabase = createAdminClient();
-
-  // First try booking_id metadata.
-  let bookingId = invoice.metadata?.booking_id || null;
-
-  // If the invoice has no booking_id metadata,
-  // find the booking using the Stripe balance invoice ID.
-  if (!bookingId) {
-    const { data: bookingByInvoice, error: invoiceLookupError } =
-      await supabase
-        .from("bookings")
-        .select("id")
-        .eq("stripe_balance_invoice_id", invoice.id)
-        .maybeSingle();
-
-    if (invoiceLookupError) {
-      console.error(
-        "Unable to find booking by Stripe invoice ID:",
-        invoiceLookupError
-      );
+console.log(`Deposit paid for booking ${bookingId}: ${session.id}`);
+}
     }
 
-    bookingId = bookingByInvoice?.id || null;
-  }
+    if (event.type === "payment_intent.succeeded") {
+      const paymentIntent = event.data.object as Stripe.PaymentIntent;
+      const chargeId = paymentIntent.metadata?.charge_id;
+      const bookingId = paymentIntent.metadata?.booking_id;
 
-  if (!bookingId) {
-    console.log(
-      "Paid invoice could not be matched to a booking:",
-      invoice.id
-    );
-  } else {
-    const { data: currentBooking, error: lookupError } = await supabase
-      .from("bookings")
-      .select("id, total_cents, amount_paid_cents, stripe_balance_invoice_id")
-      .eq("id", bookingId)
-      .single();
+      if (chargeId && bookingId) {
+        const supabase = createAdminClient();
+        let stripeCharge: Stripe.Charge | null = null;
 
-    if (lookupError || !currentBooking) {
-      console.error(
-        "Unable to find booking for paid balance invoice:",
-        lookupError
-      );
-    } else if (
-      !currentBooking.stripe_balance_invoice_id ||
-      currentBooking.stripe_balance_invoice_id === invoice.id
-    ) {
-      const { error: updateError } = await supabase
-        .from("bookings")
-        .update({
-          amount_paid_cents:
-            currentBooking.total_cents ?? invoice.amount_paid,
-        })
-        .eq("id", bookingId);
+        if (typeof paymentIntent.latest_charge === "string") {
+          stripeCharge = await stripe.charges.retrieve(paymentIntent.latest_charge);
+        }
 
-      if (updateError) {
-        console.error(
-          "Unable to update booking after balance payment:",
-          updateError
-        );
-      } else {
-        console.log(
-          `Balance paid for booking ${bookingId}: ${invoice.id}`
-        );
+        const paidAt = new Date().toISOString();
+        await supabase.from("charges").update({
+          status: "succeeded",
+          stripe_payment_intent_id: paymentIntent.id,
+          paid_at: paidAt,
+        }).eq("id", chargeId);
+
+        await supabase.from("payments").upsert({
+          booking_id: bookingId,
+          charge_id: chargeId,
+          amount_cents: paymentIntent.amount_received,
+          status: "succeeded",
+          stripe_payment_intent_id: paymentIntent.id,
+          stripe_charge_id: stripeCharge?.id ?? null,
+          stripe_receipt_url: stripeCharge?.receipt_url ?? null,
+          paid_at: paidAt,
+        }, { onConflict: "stripe_payment_intent_id" });
       }
     }
-  }
-}
+
+    if (event.type === "payment_intent.payment_failed") {
+      const paymentIntent = event.data.object as Stripe.PaymentIntent;
+      const chargeId = paymentIntent.metadata?.charge_id;
+      if (chargeId) {
+        await createAdminClient().from("charges").update({ status: "failed" }).eq("id", chargeId);
+      }
+    }
+
+    if (event.type === "invoice.paid") {
+      const invoice = event.data.object as Stripe.Invoice;
+      const supabase = createAdminClient();
+      const extraChargeId = invoice.metadata?.charge_id || null;
+      let bookingId = invoice.metadata?.booking_id || null;
+
+      if (extraChargeId && bookingId) {
+        const paidAt = new Date().toISOString();
+        const { data: existingPayment } = await supabase
+          .from("payments")
+          .select("id")
+          .eq("charge_id", extraChargeId)
+          .maybeSingle();
+
+        await supabase.from("charges").update({
+          status: "succeeded",
+          stripe_invoice_id: invoice.id,
+          paid_at: paidAt,
+        }).eq("id", extraChargeId);
+
+        if (!existingPayment) {
+          await supabase.from("payments").insert({
+            booking_id: bookingId,
+            charge_id: extraChargeId,
+            amount_cents: invoice.amount_paid,
+            status: "succeeded",
+            stripe_receipt_url: invoice.hosted_invoice_url,
+            paid_at: paidAt,
+          });
+        }
+
+        const approvedReturnAt = invoice.metadata?.approved_return_at;
+        if (invoice.metadata?.charge_type === "extra_day" && approvedReturnAt) {
+          const { data: approvedExtension } = await supabase
+            .from("extensions")
+            .select("id, status")
+            .eq("booking_id", bookingId)
+            .eq("approved_return_at", approvedReturnAt)
+            .maybeSingle();
+
+          if (approvedExtension) {
+            if (approvedExtension.status !== "paid") {
+              await supabase.from("extensions").update({ status: "paid" }).eq("id", approvedExtension.id);
+            }
+          } else {
+            await supabase.from("extensions").insert({
+              booking_id: bookingId,
+              requested_return_at: approvedReturnAt,
+              approved_return_at: approvedReturnAt,
+              amount_cents: invoice.amount_paid,
+              status: "paid",
+              owner_note: invoice.description,
+            });
+          }
+          await supabase.from("bookings").update({ return_at: approvedReturnAt }).eq("id", bookingId);
+        }
+      } else {
+        if (!bookingId) {
+          const { data: bookingByInvoice, error: invoiceLookupError } = await supabase
+            .from("bookings")
+            .select("id")
+            .eq("stripe_balance_invoice_id", invoice.id)
+            .maybeSingle();
+
+          if (invoiceLookupError) {
+            console.error("Unable to find booking by Stripe invoice ID:", invoiceLookupError);
+          }
+          bookingId = bookingByInvoice?.id || null;
+        }
+
+        if (!bookingId) {
+          console.log("Paid invoice could not be matched to a booking:", invoice.id);
+        } else {
+          const { data: currentBooking, error: lookupError } = await supabase
+            .from("bookings")
+            .select("id, total_cents, amount_paid_cents, stripe_balance_invoice_id")
+            .eq("id", bookingId)
+            .single();
+
+          if (lookupError || !currentBooking) {
+            console.error("Unable to find booking for paid balance invoice:", lookupError);
+          } else if (!currentBooking.stripe_balance_invoice_id || currentBooking.stripe_balance_invoice_id === invoice.id) {
+            const { error: updateError } = await supabase
+              .from("bookings")
+              .update({ amount_paid_cents: currentBooking.total_cents ?? invoice.amount_paid })
+              .eq("id", bookingId);
+
+            if (updateError) {
+              console.error("Unable to update booking after balance payment:", updateError);
+            } else {
+              console.log(`Balance paid for booking ${bookingId}: ${invoice.id}`);
+            }
+          }
+        }
+      }
+    }
 return NextResponse.json({ received: true })
   } catch (error) {
     console.error("Stripe webhook error:", error);
