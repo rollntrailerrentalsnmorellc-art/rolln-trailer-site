@@ -24,6 +24,7 @@ type PageProps = {
   searchParams: Promise<{
     charge?: string;
     edit?: string;
+    created?: string;
   }>;
 };
 
@@ -423,6 +424,8 @@ if (emailError) {
   }
   async function declineBooking() {
     "use server";
+
+    await requireStaff();
     
     const supabase = createAdminClient();
     const { data: currentBooking, error: bookingError } = await supabase
@@ -459,7 +462,7 @@ if (trailerError) {
 
     const { error } = await supabase
      .from("bookings")
-     .update({ status: "cancelled" })
+     .update({ status: "declined", cancelled_at: new Date().toISOString() })
     .eq("id", id);
 
   if (error) {
@@ -582,6 +585,8 @@ if (emailError) {
   async function resendBalanceInvoice() {
   "use server";
 
+  await requireStaff();
+
   const supabase = createAdminClient();
 
   const { data: booking, error } = await supabase
@@ -620,6 +625,8 @@ if (emailError) {
   async function markPickedUp() {
   "use server";
 
+   await requireStaff();
+
    const supabase = createAdminClient();
 
    const { error } = await supabase
@@ -642,6 +649,8 @@ if (emailError) {
 
   async function recordBalancePaidOffline() {
     "use server";
+
+    await requireStaff();
 
     const supabase = createAdminClient();
 
@@ -967,6 +976,8 @@ if (emailError) {
   async function markReturned() {
   "use server";
 
+  await requireStaff();
+
   const supabase = createAdminClient();
 
   const { data: currentBooking, error: bookingError } = await supabase
@@ -1102,7 +1113,7 @@ let insuranceUrl: string | null = null;
 if (booking.drivers_license_path) {
   const { data } = await adminSupabase.storage
     .from("rental-documents")
-    .createSignedUrl(booking.drivers_license_path, 60 * 60 * 24 * 365);
+    .createSignedUrl(booking.drivers_license_path, 60 * 10);
 
   driversLicenseUrl = data?.signedUrl ?? null;
 }
@@ -1110,7 +1121,7 @@ if (booking.drivers_license_path) {
 if (booking.insurance_path) {
   const { data } = await adminSupabase.storage
     .from("rental-documents")
-    .createSignedUrl(booking.insurance_path, 60 * 60 * 24 * 365);
+    .createSignedUrl(booking.insurance_path, 60 * 10);
 
   insuranceUrl = data?.signedUrl ?? null;
 }
@@ -1172,6 +1183,12 @@ if (booking.insurance_path) {
               {booking.status.replaceAll("_", " ")}
             </p>
           </div>
+
+          {pageSearchParams.created === "owner" && (
+            <div className="notice" style={{ marginTop: 18 }}>
+              Booking created from the owner app. Verify the schedule, towing details, and price below, then approve it when ready.
+            </div>
+          )}
 
           {editResult === "updated" && (
             <div className="notice" style={{ marginTop: 18 }}>
@@ -1623,7 +1640,7 @@ if (booking.insurance_path) {
               </div>
             )}
 
-            {booking.status === "cancelled" && (
+            {["cancelled", "declined"].includes(booking.status) && (
               <div
                 style={{
                   padding: 14,
@@ -1642,8 +1659,4 @@ if (booking.insurance_path) {
       </section>
     </main>
   );
-}
-
-function eq(arg0: string, id: string) {
-  throw new Error("Function not implemented.");
 }
