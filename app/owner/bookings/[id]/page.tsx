@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { Resend } from "resend";
 import Stripe from "stripe";
+import { addOnTotal, parseRentalAddOns } from "@/lib/addons";
 import { TZDate } from "@date-fns/tz";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
@@ -159,7 +160,7 @@ export default async function BookingDetailsPage({ params, searchParams }: PageP
     const admin = createAdminClient();
     const { data: currentBooking, error: bookingError } = await admin
       .from("bookings")
-      .select("id, status, trailer_id, deposit_cents")
+      .select("id, status, trailer_id, deposit_cents, owner_notes")
       .eq("id", id)
       .single();
 
@@ -200,15 +201,17 @@ export default async function BookingDetailsPage({ params, searchParams }: PageP
       trailer.daily_rate_cents ?? 0,
       trailer.weekly_rate_cents ?? null
     );
+    const rentalDays = Math.max(1, Math.ceil((returnAt.getTime() - pickupAt.getTime()) / (24 * 60 * 60 * 1000)));
+    const updatedSubtotalCents = subtotalCents + addOnTotal(parseRentalAddOns(currentBooking.owner_notes), rentalDays);
 
     const { error: updateError } = await admin
       .from("bookings")
       .update({
         pickup_at: pickupAt.toISOString(),
         return_at: returnAt.toISOString(),
-        subtotal_cents: subtotalCents,
+        subtotal_cents: updatedSubtotalCents,
         deposit_cents: currentBooking.deposit_cents ?? trailer.deposit_cents ?? 5000,
-        total_cents: subtotalCents,
+        total_cents: updatedSubtotalCents,
       })
       .eq("id", id)
       .in("status", ["pending", "pending_payment"]);
@@ -239,6 +242,7 @@ export default async function BookingDetailsPage({ params, searchParams }: PageP
       pickup_at,
       return_at,
       trailer_id,
+      tow_rating_lbs,
       status,
       stripe_balance_invoice_id
       `)
@@ -270,12 +274,20 @@ export default async function BookingDetailsPage({ params, searchParams }: PageP
   }
   const { data: trailer, error: trailerError } = await supabase
   .from("trailers")
-  .select("name")
+  .select("name, gvwr_lbs, status, is_public")
   .eq("id", currentBooking.trailer_id)
   .single();
 
-if (trailerError) {
-  console.error("Unable to load trailer:", trailerError);
+if (trailerError || !trailer) {
+  throw new Error("Unable to verify the trailer before approval.");
+}
+
+if (trailer.status === "inactive" || !trailer.is_public) {
+  redirect(`/owner/bookings/${id}?edit=trailer_unavailable`);
+}
+
+if (!currentBooking.tow_rating_lbs || currentBooking.tow_rating_lbs > 40000 || (trailer.gvwr_lbs && currentBooking.tow_rating_lbs < trailer.gvwr_lbs)) {
+  redirect(`/owner/bookings/${id}?edit=tow_rating`);
 }
 
   const { error } = await supabase
@@ -1082,6 +1094,8 @@ if (emailError) {
     notFound();
   } 
 
+  const selectedAddOns = parseRentalAddOns(booking.owner_notes);
+
   let driversLicenseUrl: string | null = null;
 let insuranceUrl: string | null = null;
 
@@ -1174,6 +1188,10 @@ if (booking.insurance_path) {
                 "Those dates overlap another pending, confirmed, or active rental. Choose different times before approving."}
               {editResult === "not_pending" &&
                 "Only bookings waiting for approval can be edited here."}
+              {editResult === "tow_rating" &&
+                "Approval is blocked because the tow rating is missing, unrealistic, or below this trailer's GVWR. Verify the vehicle capacity and decline the request if it is unsuitable."}
+              {editResult === "trailer_unavailable" &&
+                "Approval is blocked because this trailer is paused or archived."}
               {["load_failed", "check_failed", "pricing_failed", "save_failed"].includes(editResult) &&
                 "The booking could not be updated. Please try again."}
             </div>
@@ -1292,6 +1310,7 @@ if (booking.insurance_path) {
                 <strong>Intended use:</strong>{" "}
                 {booking.intended_use || "Not provided"}
               </p>
+              {selectedAddOns.length > 0 && <div><strong>Rental add-ons:</strong><ul>{selectedAddOns.map((item) => <li key={item.id}>{item.name} — {formatMoney(item.pricePerDayCents)}/day</li>)}</ul></div>}
             </div>
 
             <div className="panel">
