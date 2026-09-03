@@ -19,53 +19,7 @@ type PageProps = {
   params: Promise<{
     id: string;
   }>;
-  searchParams: Promise<{
-    charge?: string;
-  }>;
 };
-
-const ownerChargeTypes = [
-  "extra_day",
-  "damage",
-  "cleaning",
-  "late_fee",
-  "add_on",
-  "other",
-] as const;
-
-type OwnerChargeType = (typeof ownerChargeTypes)[number];
-
-async function requireStaff() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-
-  if (!user) throw new Error("Owner sign-in required.");
-
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .single();
-
-  if (!profile || !["owner", "staff"].includes(profile.role)) {
-    throw new Error("Owner access required.");
-  }
-}
-
-function dollarsToCents(value: string) {
-  if (!/^\d{1,5}(\.\d{1,2})?$/.test(value.trim())) {
-    throw new Error("Enter a valid charge amount.");
-  }
-
-  const [dollars, cents = ""] = value.trim().split(".");
-  const amount = Number(dollars) * 100 + Number(cents.padEnd(2, "0"));
-
-  if (!Number.isSafeInteger(amount) || amount < 100 || amount > 5_000_000) {
-    throw new Error("Charge amount must be between $1.00 and $50,000.00.");
-  }
-
-  return amount;
-}
 
 function formatDate(value: string | null) {
   if (!value) return "Not set";
@@ -84,9 +38,8 @@ function formatMoney(cents: number | null) {
   }).format((cents ?? 0) / 100);
 }
 
-export default async function BookingDetailsPage({ params, searchParams }: PageProps) {
+export default async function BookingDetailsPage({ params }: PageProps) {
   const { id } = await params;
-  const chargeResult = (await searchParams).charge;
 
   async function approveBooking() {
   "use server";
@@ -526,278 +479,6 @@ if (emailError) {
     redirect(`/owner/bookings/${id}`);
   }
 
-  async function chargeSavedCard(formData: FormData) {
-    "use server";
-
-    await requireStaff();
-
-    const chargeType = String(formData.get("chargeType") ?? "") as OwnerChargeType;
-    const description = String(formData.get("description") ?? "").trim();
-    const amountCents = dollarsToCents(String(formData.get("amount") ?? ""));
-    const requestedReturnAt = String(formData.get("requestedReturnAt") ?? "").trim();
-
-    if (!ownerChargeTypes.includes(chargeType)) {
-      throw new Error("Select a valid charge type.");
-    }
-    if (description.length < 3 || description.length > 500) {
-      throw new Error("Add a short description between 3 and 500 characters.");
-    }
-    if (String(formData.get("confirmCharge")) !== "yes") {
-      throw new Error("Confirm the charge before submitting it.");
-    }
-
-    const admin = createAdminClient();
-    const { data: currentBooking, error: bookingError } = await admin
-      .from("bookings")
-      .select(`
-        id,
-        confirmation_code,
-        customer_email,
-        customer_name,
-        trailer_id,
-        status,
-        return_at,
-        stripe_customer_id,
-        stripe_payment_intent_id
-      `)
-      .eq("id", id)
-      .single();
-
-    if (bookingError || !currentBooking) {
-      throw new Error("Unable to load the rental for this charge.");
-    }
-    if (["cancelled", "declined"].includes(currentBooking.status)) {
-      throw new Error("Cancelled or declined rentals cannot be charged.");
-    }
-
-    let approvedReturnAt: string | null = null;
-    if (chargeType === "extra_day") {
-      if (!["confirmed", "active"].includes(currentBooking.status)) {
-        throw new Error("Only confirmed or active rentals can be extended.");
-      }
-
-      const parsedReturnAt = new Date(requestedReturnAt);
-      if (!requestedReturnAt || !Number.isFinite(parsedReturnAt.getTime())) {
-        throw new Error("Choose the new return date and time.");
-      }
-      if (parsedReturnAt <= new Date(currentBooking.return_at)) {
-        throw new Error("The extended return must be later than the current return.");
-      }
-
-      approvedReturnAt = parsedReturnAt.toISOString();
-      const { data: conflicts, error: conflictError } = await admin
-        .from("bookings")
-        .select("id, confirmation_code")
-        .eq("trailer_id", currentBooking.trailer_id)
-        .neq("id", currentBooking.id)
-        .in("status", ["pending_payment", "confirmed", "active"])
-        .lt("pickup_at", approvedReturnAt)
-        .gt("return_at", currentBooking.return_at)
-        .limit(1);
-
-      if (conflictError) throw new Error(`Unable to verify availability: ${conflictError.message}`);
-      if (conflicts?.length) {
-        throw new Error(`Extension conflicts with rental ${conflicts[0].confirmation_code ?? conflicts[0].id}.`);
-      }
-    }
-
-    let customerId = currentBooking.stripe_customer_id as string | null;
-    if (!customerId) {
-      const existing = await stripe.customers.list({
-        email: currentBooking.customer_email,
-        limit: 1,
-      });
-      customerId = existing.data[0]?.id ?? null;
-
-      if (!customerId) {
-        const customer = await stripe.customers.create({
-          email: currentBooking.customer_email,
-          name: currentBooking.customer_name ?? undefined,
-          metadata: {
-            booking_id: currentBooking.id,
-            confirmation_code: currentBooking.confirmation_code,
-          },
-        });
-        customerId = customer.id;
-      }
-
-      await admin.from("bookings").update({ stripe_customer_id: customerId }).eq("id", id);
-    }
-
-    const { data: chargeRecord, error: chargeCreateError } = await admin
-      .from("charges")
-      .insert({
-        booking_id: id,
-        type: chargeType,
-        description,
-        amount_cents: amountCents,
-        status: "pending",
-      })
-      .select("id")
-      .single();
-
-    if (chargeCreateError || !chargeRecord) {
-      throw new Error(`Unable to record charge: ${chargeCreateError?.message ?? "Unknown error"}`);
-    }
-
-    let paymentMethodId: string | null = null;
-    if (currentBooking.stripe_payment_intent_id) {
-      try {
-        const originalPayment = await stripe.paymentIntents.retrieve(
-          currentBooking.stripe_payment_intent_id
-        );
-        paymentMethodId = typeof originalPayment.payment_method === "string"
-          ? originalPayment.payment_method
-          : originalPayment.payment_method?.id ?? null;
-      } catch {
-        paymentMethodId = null;
-      }
-    }
-
-    if (!paymentMethodId) {
-      const methods = await stripe.paymentMethods.list({
-        customer: customerId,
-        type: "card",
-        limit: 1,
-      });
-      paymentMethodId = methods.data[0]?.id ?? null;
-    }
-
-    let chargePaid = false;
-    if (paymentMethodId) {
-      try {
-        const paymentIntent = await stripe.paymentIntents.create(
-          {
-            amount: amountCents,
-            currency: "usd",
-            customer: customerId,
-            payment_method: paymentMethodId,
-            off_session: true,
-            confirm: true,
-            description: `${description} — ${currentBooking.confirmation_code}`,
-            metadata: {
-              booking_id: id,
-              confirmation_code: currentBooking.confirmation_code,
-              charge_id: chargeRecord.id,
-              charge_type: chargeType,
-            },
-          },
-          { idempotencyKey: `owner-charge-${chargeRecord.id}` }
-        );
-
-        let receiptUrl: string | null = null;
-        let stripeChargeId: string | null = null;
-        if (typeof paymentIntent.latest_charge === "string") {
-          const stripeCharge = await stripe.charges.retrieve(paymentIntent.latest_charge);
-          stripeChargeId = stripeCharge.id;
-          receiptUrl = stripeCharge.receipt_url;
-        }
-
-        const paidAt = new Date().toISOString();
-        await admin.from("charges").update({
-          status: "succeeded",
-          stripe_payment_intent_id: paymentIntent.id,
-          paid_at: paidAt,
-        }).eq("id", chargeRecord.id);
-
-        await admin.from("payments").insert({
-          booking_id: id,
-          charge_id: chargeRecord.id,
-          amount_cents: amountCents,
-          status: "succeeded",
-          stripe_payment_intent_id: paymentIntent.id,
-          stripe_charge_id: stripeChargeId,
-          stripe_receipt_url: receiptUrl,
-          paid_at: paidAt,
-        });
-
-        if (chargeType === "extra_day" && approvedReturnAt) {
-          await admin.from("extensions").insert({
-            booking_id: id,
-            requested_return_at: approvedReturnAt,
-            approved_return_at: approvedReturnAt,
-            amount_cents: amountCents,
-            status: "paid",
-            owner_note: description,
-          });
-          await admin.from("bookings").update({ return_at: approvedReturnAt }).eq("id", id);
-        }
-
-        revalidatePath(`/owner/bookings/${id}`);
-        revalidatePath("/owner/bookings");
-        revalidatePath("/owner/payments");
-        revalidatePath("/owner/fleet");
-        chargePaid = true;
-      } catch (error) {
-        console.error("Saved card charge failed; sending invoice:", error);
-      }
-    }
-
-    if (chargePaid) {
-      redirect(`/owner/bookings/${id}?charge=paid`);
-    }
-
-    const invoice = await stripe.invoices.create({
-      customer: customerId,
-      collection_method: "send_invoice",
-      days_until_due: 1,
-      description: `${description} — ${currentBooking.confirmation_code}`,
-      metadata: {
-        booking_id: id,
-        confirmation_code: currentBooking.confirmation_code,
-        charge_id: chargeRecord.id,
-        charge_type: chargeType,
-        approved_return_at: approvedReturnAt ?? "",
-      },
-    });
-
-    await stripe.invoiceItems.create({
-      customer: customerId,
-      invoice: invoice.id,
-      amount: amountCents,
-      currency: "usd",
-      description,
-    });
-
-    const finalizedInvoice = await stripe.invoices.finalizeInvoice(invoice.id);
-    await stripe.invoices.sendInvoice(finalizedInvoice.id);
-    await admin.from("charges").update({
-      stripe_invoice_id: finalizedInvoice.id,
-      status: "pending",
-    }).eq("id", chargeRecord.id);
-
-    if (chargeType === "extra_day" && approvedReturnAt) {
-      const { error: extensionError } = await admin.from("extensions").insert({
-        booking_id: id,
-        requested_return_at: approvedReturnAt,
-        approved_return_at: approvedReturnAt,
-        amount_cents: amountCents,
-        status: "approved",
-        owner_note: `${description} · Stripe invoice ${finalizedInvoice.id}`,
-      });
-      const { error: returnUpdateError } = await admin
-        .from("bookings")
-        .update({ return_at: approvedReturnAt })
-        .eq("id", id);
-
-      if (extensionError || returnUpdateError) {
-        await admin.from("extensions")
-          .delete()
-          .eq("booking_id", id)
-          .eq("approved_return_at", approvedReturnAt)
-          .eq("status", "approved");
-        await admin.from("bookings").update({ return_at: currentBooking.return_at }).eq("id", id);
-        await stripe.invoices.voidInvoice(finalizedInvoice.id);
-        await admin.from("charges").update({ status: "failed" }).eq("id", chargeRecord.id);
-        throw new Error("The extension could not be reserved, so its invoice was voided.");
-      }
-    }
-
-    revalidatePath(`/owner/bookings/${id}`);
-    revalidatePath("/owner/payments");
-    redirect(`/owner/bookings/${id}?charge=invoice_sent`);
-  }
-
   async function markReturned() {
   "use server";
 
@@ -911,7 +592,6 @@ if (emailError) {
       stripe_checkout_session_id,
       stripe_payment_intent_id,
       stripe_balance_invoice_id,
-      stripe_customer_id,
       completed_at,
       cancelled_at,
       agreement_accepted_at,
@@ -946,33 +626,6 @@ if (booking.insurance_path) {
 
   insuranceUrl = data?.signedUrl ?? null;
 }
-
-  const [{ data: additionalCharges }, { data: chargePayments }] = await Promise.all([
-    adminSupabase
-      .from("charges")
-      .select("id, type, description, amount_cents, status, stripe_invoice_id, stripe_payment_intent_id, paid_at, created_at")
-      .eq("booking_id", id)
-      .order("created_at", { ascending: false }),
-    adminSupabase
-      .from("payments")
-      .select("charge_id, stripe_receipt_url")
-      .eq("booking_id", id),
-  ]);
-
-  let savedCardLabel = "No saved card yet";
-  if (booking.stripe_customer_id) {
-    try {
-      const methods = await stripe.paymentMethods.list({
-        customer: booking.stripe_customer_id,
-        type: "card",
-        limit: 1,
-      });
-      const card = methods.data[0]?.card;
-      if (card) savedCardLabel = `${card.brand.toUpperCase()} ending in ${card.last4}`;
-    } catch (cardLookupError) {
-      console.error("Unable to check saved card:", cardLookupError);
-    }
-  }
 
   const balance = Math.max(
     (booking.total_cents ?? 0) - (booking.amount_paid_cents ?? 0),
@@ -1109,10 +762,6 @@ if (booking.insurance_path) {
               <p>
                 <strong>Balance due:</strong> {formatMoney(balance)}
               </p>
-
-              <p>
-                <strong>Card on file:</strong> {savedCardLabel}
-              </p>
             </div>
 
             <div className="panel">
@@ -1173,99 +822,6 @@ if (booking.insurance_path) {
 </div>
 </div>
 
-          </div>
-
-          {chargeResult === "paid" && (
-            <div className="notice" style={{ marginTop: 18, borderColor: "var(--green)" }}>
-              Saved card charged successfully. The payment and receipt are recorded below.
-            </div>
-          )}
-
-          {chargeResult === "invoice_sent" && (
-            <div className="notice" style={{ marginTop: 18 }}>
-              The saved card could not be charged automatically, so Stripe emailed the customer a secure invoice.
-            </div>
-          )}
-
-          {!(["cancelled", "declined"] as string[]).includes(booking.status) && (
-            <div className="panel" style={{ marginTop: 18 }}>
-              <h2>Charge Customer</h2>
-              <p className="muted">
-                Charges the saved card securely. If the card needs customer approval or is not yet saved, Stripe emails a secure invoice instead.
-              </p>
-
-              <form action={chargeSavedCard} style={{ display: "grid", gap: 14 }}>
-                <label>
-                  <strong>Charge type</strong>
-                  <select name="chargeType" required defaultValue="extra_day" style={{ width: "100%", minHeight: 48, marginTop: 6 }}>
-                    <option value="extra_day">Rental extension / extra day</option>
-                    <option value="damage">Damage</option>
-                    <option value="cleaning">Cleaning</option>
-                    <option value="late_fee">Late fee</option>
-                    <option value="add_on">Add-on</option>
-                    <option value="other">Other</option>
-                  </select>
-                </label>
-
-                <label>
-                  <strong>Amount</strong>
-                  <input name="amount" inputMode="decimal" placeholder="120.00" required style={{ width: "100%", minHeight: 48, marginTop: 6 }} />
-                </label>
-
-                <label>
-                  <strong>Description</strong>
-                  <textarea name="description" rows={3} maxLength={500} placeholder="Example: One-day rental extension" required style={{ width: "100%", marginTop: 6 }} />
-                </label>
-
-                <label>
-                  <strong>New return date and time</strong>
-                  <span className="muted"> — required only for an extension</span>
-                  <input name="requestedReturnAt" type="datetime-local" style={{ width: "100%", minHeight: 48, marginTop: 6 }} />
-                </label>
-
-                <label style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
-                  <input name="confirmCharge" type="checkbox" value="yes" required style={{ width: 22, height: 22, marginTop: 2 }} />
-                  <span>I reviewed the amount and reason and authorize this customer charge.</span>
-                </label>
-
-                <button className="btn" type="submit" style={{ width: "100%" }}>
-                  Charge Saved Card / Send Invoice
-                </button>
-              </form>
-            </div>
-          )}
-
-          <div className="panel" style={{ marginTop: 18 }}>
-            <h2>Additional Charges &amp; Receipts</h2>
-            {!additionalCharges?.length ? (
-              <p className="muted">No extension, damage, cleaning, or late-fee charges recorded.</p>
-            ) : (
-              <div style={{ display: "grid", gap: 10 }}>
-                {additionalCharges.map((charge) => (
-                  <div key={charge.id} style={{ border: "1px solid var(--line)", borderRadius: 12, padding: 14 }}>
-                    <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", gap: 8 }}>
-                      <strong style={{ textTransform: "capitalize" }}>{charge.type.replaceAll("_", " ")}</strong>
-                      <strong>{formatMoney(charge.amount_cents)}</strong>
-                    </div>
-                    <p style={{ margin: "8px 0" }}>{charge.description || "No description"}</p>
-                    <div className="muted" style={{ fontSize: 13, textTransform: "capitalize" }}>
-                      {charge.status.replaceAll("_", " ")} · {formatDate(charge.paid_at || charge.created_at)}
-                    </div>
-                    {chargePayments?.find((payment) => payment.charge_id === charge.id)?.stripe_receipt_url && (
-                      <a
-                        className="btn2"
-                        href={chargePayments.find((payment) => payment.charge_id === charge.id)?.stripe_receipt_url ?? "#"}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        style={{ marginTop: 10 }}
-                      >
-                        View Stripe Receipt
-                      </a>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
           </div>
 
           <div
