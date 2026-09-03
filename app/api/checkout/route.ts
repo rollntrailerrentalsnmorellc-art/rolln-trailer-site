@@ -25,7 +25,8 @@ export async function POST(request: Request) {
         intake_completed_at,
         agreement_accepted_at,
         drivers_license_path,
-        insurance_path
+        insurance_path,
+        stripe_customer_id
       `)
       .eq("id", bookingId)
       .single();
@@ -83,10 +84,42 @@ if (chargeAmount <= 0) {
         ? `https://${process.env.VERCEL_URL}`
         : "https://rollntrailerrentals.com");
 
+    let stripeCustomerId = booking.stripe_customer_id as string | null;
+
+    if (!stripeCustomerId) {
+      const existingCustomers = await stripe.customers.list({
+        email: booking.customer_email,
+        limit: 1,
+      });
+
+      if (existingCustomers.data.length > 0) {
+        stripeCustomerId = existingCustomers.data[0].id;
+      } else {
+        const customer = await stripe.customers.create({
+          email: booking.customer_email,
+          name: booking.customer_name ?? undefined,
+          metadata: {
+            booking_id: booking.id,
+            confirmation_code: booking.confirmation_code,
+          },
+        });
+        stripeCustomerId = customer.id;
+      }
+
+      const { error: customerSaveError } = await supabase
+        .from("bookings")
+        .update({ stripe_customer_id: stripeCustomerId })
+        .eq("id", booking.id);
+
+      if (customerSaveError) {
+        throw new Error(`Unable to save Stripe customer: ${customerSaveError.message}`);
+      }
+    }
+
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
-
-      customer_email: booking.customer_email,
+      customer: stripeCustomerId,
+      payment_method_types: ["card"],
 
       line_items: [
         {
@@ -112,10 +145,18 @@ if (chargeAmount <= 0) {
       },
 
       payment_intent_data: {
+        setup_future_usage: "off_session",
         metadata: {
           booking_id: booking.id,
           confirmation_code: booking.confirmation_code,
           payment_type: paymentType == "balance" ? "balance" : "deposit",
+        },
+      },
+
+      custom_text: {
+        submit: {
+          message:
+            "By paying, you authorize Roll'N Trailer Rentals N More LLC to keep this payment method on file and charge amounts owed under your accepted rental agreement, including approved extensions, damage, cleaning, and late fees.",
         },
       },
 
