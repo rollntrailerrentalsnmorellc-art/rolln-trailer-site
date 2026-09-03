@@ -2,6 +2,7 @@ import Link from 'next/link';
 import {createClient} from '@/lib/supabase/server';
 import {fallbackImages,money,Trailer} from '@/lib/trailers';
 import HeroCarousel from '@/app/components/HeroCarousel';
+import GoogleReviews from '@/app/components/GoogleReviews';
 
 export const revalidate = 60;
 
@@ -49,6 +50,7 @@ export default async function Home(){
   <section id="trailers"><div className="container"><div className="section-head"><span className="eyebrow">Your fleet</span><h2>Available trailers</h2><p className="muted">The fleet below is loaded directly from your Supabase database.</p></div>
    <div className="grid three">{trailers.map(t=>{const imgs=(t.image_urls?.length?t.image_urls:fallbackImages[t.slug])||['/images/Logo.png']; return <article className="trailer" key={t.id}><img src={imgs[0]} alt={t.name}/><div className="trailer-body"><div className="row"><h3>{t.name}</h3><span className="price">{money(t.daily_rate_cents)}/day</span></div><p className="muted">{t.description}</p><div className="chips"><span className="chip">{t.gvwr_lbs?.toLocaleString()} lb GVWR</span><span className="chip">{money(t.deposit_cents)} deposit</span></div><Link className="btn" href={`/trailers/${t.slug}`}>View & Check Dates</Link></div></article>})}</div>
   </div></section>
+  <section id="reviews"><div className="container"><div className="section-head"><span className="eyebrow">Trusted by local renters</span><h2>What customers are saying</h2></div><GoogleReviews/></div></section>
   <section id="faq"><div className="container"><div className="section-head"><span className="eyebrow">Common questions</span><h2>Trailer rental FAQ</h2></div>
    <div className="grid">{faqItems.map(item=><article className="panel" key={item.question}><h3>{item.question}</h3><p className="muted">{item.answer}</p></article>)}</div>
   </div></section>
