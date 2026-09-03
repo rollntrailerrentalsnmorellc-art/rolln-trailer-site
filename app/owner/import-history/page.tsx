@@ -7,6 +7,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 export const revalidate = 0;
 
 type ImportRow = {
+  bookingId?: string;
   sourceEntryId: string;
   trailerSlug: string;
   customerName: string;
@@ -16,6 +17,7 @@ type ImportRow = {
   returnAt: string;
   towVehicle?: string;
   intendedUse?: string;
+  totalCents?: number;
 };
 
 async function requireOwner() {
@@ -76,6 +78,7 @@ async function importHistory(formData: FormData) {
 
   const inserts = [];
   let skipped = 0;
+  let updated = 0;
 
   for (const row of rows) {
     const sourceEntryId = String(row.sourceEntryId ?? "").trim();
@@ -85,8 +88,10 @@ async function importHistory(formData: FormData) {
     const pickupAt = String(row.pickupAt ?? "");
     const returnAt = String(row.returnAt ?? "");
     const confirmationCode = `COGNITO-${sourceEntryId}`;
+    const bookingId = String(row.bookingId ?? "").trim();
+    const totalCents = Number(row.totalCents ?? 0);
 
-    if (!sourceEntryId || !trailerId || !customerName || !customerEmail || !isValidDate(pickupAt) || !isValidDate(returnAt)) {
+    if (!sourceEntryId || !trailerId || !customerName || !customerEmail || !isValidDate(pickupAt) || !isValidDate(returnAt) || !Number.isSafeInteger(totalCents) || totalCents < 0 || totalCents > 5_000_000) {
       throw new Error(`Cognito entry ${sourceEntryId || "unknown"} is missing required information.`);
     }
     if (new Date(returnAt) <= new Date(pickupAt)) {
@@ -94,6 +99,28 @@ async function importHistory(formData: FormData) {
     }
 
     const rentalKey = `${customerEmail}|${trailerId}|${pickupAt.slice(0, 10)}|${returnAt.slice(0, 10)}`;
+    if (bookingId) {
+      const { data: current, error: currentError } = await admin
+        .from("bookings")
+        .select("id, status, customer_email, trailer_id")
+        .eq("id", bookingId)
+        .single();
+      if (currentError || !current || current.status !== "completed" || String(current.customer_email).toLowerCase() !== customerEmail || current.trailer_id !== trailerId) {
+        throw new Error(`Completed rental ${bookingId} does not match the supplied customer and trailer.`);
+      }
+      const { error: updateError } = await admin.from("bookings").update({
+        pickup_at: pickupAt,
+        return_at: returnAt,
+        subtotal_cents: totalCents,
+        total_cents: totalCents,
+        amount_paid_cents: totalCents,
+        completed_at: returnAt,
+        owner_notes: `Historical rental corrected from owner-provided records. Dates and paid total verified; pickup and return times use the legacy-history convention.`,
+      }).eq("id", bookingId).eq("status", "completed");
+      if (updateError) throw new Error(`Unable to update rental ${bookingId}: ${updateError.message}`);
+      updated += 1;
+      continue;
+    }
     if (existingCodes.has(confirmationCode) || existingRentals.has(rentalKey)) {
       skipped += 1;
       continue;
@@ -112,13 +139,13 @@ async function importHistory(formData: FormData) {
       customer_name: customerName,
       tow_vehicle: String(row.towVehicle ?? "").trim() || null,
       intended_use: String(row.intendedUse ?? "").trim() || null,
-      subtotal_cents: 0,
+      subtotal_cents: totalCents,
       deposit_cents: 0,
-      total_cents: 0,
-      amount_paid_cents: 0,
+      total_cents: totalCents,
+      amount_paid_cents: totalCents,
       agreement_accepted_at: pickupAt,
       agreement_version: "Cognito Forms legacy intake",
-      owner_notes: `Imported from Cognito Forms entry #${sourceEntryId}. Dates only; pickup and return times were not recorded. Payment amount was not recorded in Cognito.`,
+      owner_notes: `Historical rental added from owner-provided records. Dates and paid total verified; pickup and return times use the legacy-history convention.`,
       completed_at: returnAt,
     });
   }
@@ -132,13 +159,13 @@ async function importHistory(formData: FormData) {
   revalidatePath("/owner/bookings");
   revalidatePath("/owner/customers");
   revalidatePath("/owner/fleet");
-  redirect(`/owner/import-history?imported=${inserts.length}&skipped=${skipped}`);
+  redirect(`/owner/import-history?imported=${inserts.length}&updated=${updated}&skipped=${skipped}`);
 }
 
 export default async function ImportHistoryPage({
   searchParams,
 }: {
-  searchParams: Promise<{ imported?: string; skipped?: string }>;
+  searchParams: Promise<{ imported?: string; updated?: string; skipped?: string }>;
 }) {
   try {
     await requireOwner();
@@ -163,7 +190,7 @@ export default async function ImportHistoryPage({
 
       {result.imported !== undefined && (
         <div className="notice" style={{ marginBottom: 18 }}>
-          Imported {result.imported} rental{result.imported === "1" ? "" : "s"}; skipped {result.skipped ?? "0"} duplicate{result.skipped === "1" ? "" : "s"}.
+          Added {result.imported} rental{result.imported === "1" ? "" : "s"}; updated {result.updated ?? "0"}; skipped {result.skipped ?? "0"} duplicate{result.skipped === "1" ? "" : "s"}.
         </div>
       )}
 
