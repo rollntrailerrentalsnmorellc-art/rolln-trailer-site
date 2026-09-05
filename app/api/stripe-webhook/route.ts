@@ -149,15 +149,7 @@ if (error) {
 
 console.log(`Deposit paid for booking ${bookingId}: ${session.id}`);
 
-const { data: readyBooking } = await supabase
-  .from("bookings")
-  .update({ status: "pending" })
-  .eq("id", bookingId)
-  .eq("status", "pending_payment")
-  .select("id")
-  .maybeSingle();
-
-if (readyBooking) {
+if (currentBooking.intake_completed_at && currentBooking.agreement_accepted_at) {
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ??
     (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "https://rollntrailerrentals.com");
   const { error: ownerEmailError } = await resend.emails.send({
