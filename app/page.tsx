@@ -20,7 +20,7 @@ const heroSlides = [
 const faqItems = [
  {question:'What areas do you serve?',answer:'We serve Augusta, Evans, Grovetown, Martinez, Harlem and nearby communities across the CSRA, including North Augusta and Aiken.'},
  {question:'How do I reserve a trailer?',answer:'Choose a trailer, check your dates and submit a rental request online. We review the request before confirming the rental.'},
- {question:'Is a deposit required?',answer:'Yes. A $50 deposit is collected securely after your request is approved and your rental documents are completed.'},
+ {question:'Is a deposit required?',answer:'Yes. The $50 deposit, rental documents, and signed agreement are completed when you submit your request. The owner reviews the completed request afterward.'},
  {question:'What do I need to tow a trailer?',answer:'You need a properly rated tow vehicle, the correct hitch connection and a working brake controller when required. We verify towing information before approval.'},
  {question:'Can I request a rental at any time?',answer:'Yes. Online rental requests are available 24 hours a day, seven days a week.'},
 ];
@@ -45,7 +45,7 @@ export default async function Home(){
    <div className="card hero-photo"><HeroCarousel slides={heroSlides}/></div>
   </div></section>
   <section id="how"><div className="container"><div className="section-head"><span className="eyebrow">Simple rental process</span><h2>Choose. Confirm. Get rolling.</h2></div>
-   <div className="steps"><div className="step"><span>1</span><h3>Choose a trailer</h3><p className="muted">Review photos, capacity and rates.</p></div><div className="step"><span>2</span><h3>Check dates</h3><p className="muted">Live availability helps prevent double booking.</p></div><div className="step"><span>3</span><h3>Reserve securely</h3><p className="muted">Complete documents and deposit from your phone.</p></div></div>
+   <div className="steps"><div className="step"><span>1</span><h3>Request your trailer</h3><p className="muted">Choose dates, enter your information, upload documents, sign the agreement, and pay the $50 deposit.</p></div><div className="step"><span>2</span><h3>Finish after approval</h3><p className="muted">Pay the final invoice and call or text us to arrange the meeting spot.</p></div></div>
   </div></section>
   <section id="trailers"><div className="container"><div className="section-head"><span className="eyebrow">Your fleet</span><h2>Available trailers</h2><p className="muted">The fleet below is loaded directly from your Supabase database.</p></div>
    <div className="grid three">{trailers.map(t=>{const imgs=(t.image_urls?.length?t.image_urls:fallbackImages[t.slug])||['/images/Logo.png']; return <article className="trailer" key={t.id}><img src={imgs[0]} alt={t.name}/><div className="trailer-body"><div className="row"><h3>{t.name}</h3><span className="price">{money(t.daily_rate_cents)}/day</span></div><p className="muted">{t.description}</p><div className="chips"><span className="chip">{t.gvwr_lbs?.toLocaleString()} lb GVWR</span><span className="chip">{money(t.deposit_cents)} deposit</span></div><Link className="btn" href={`/trailers/${t.slug}`}>View & Check Dates</Link></div></article>})}</div>
