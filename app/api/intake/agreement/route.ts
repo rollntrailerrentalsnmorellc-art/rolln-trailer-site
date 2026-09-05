@@ -45,7 +45,7 @@ export async function POST(request: Request) {
     const { data: booking, error: bookingError } =
       await supabase
         .from("bookings")
-        .select("id, agreement_accepted_at, drivers_license_path, insurance_path")
+        .select("id, status, created_at, agreement_accepted_at, drivers_license_path, insurance_path")
         .eq("confirmation_code", confirmationCode)
         .single();
 
@@ -54,6 +54,11 @@ export async function POST(request: Request) {
         { error: "Reservation not found." },
         { status: 404 }
       );
+    }
+
+    if (booking.status === "pending_payment" && Date.now() - new Date(booking.created_at).getTime() > 30 * 60 * 1000) {
+      await supabase.from("bookings").update({ status: "cancelled", cancelled_at: new Date().toISOString() }).eq("id", booking.id).eq("status", "pending_payment");
+      return NextResponse.json({ error: "This request expired after 30 minutes. Please start again." }, { status: 410 });
     }
 
     if (booking.agreement_accepted_at) {
