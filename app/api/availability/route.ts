@@ -11,7 +11,10 @@ export async function GET(req:NextRequest){
  const supabase=createAdminClient();
  const {data,error}=await supabase.from('bookings').select('id,status,created_at').eq('trailer_id',trailerId)
   .lt('pickup_at',end.toISOString()).gt('return_at',start.toISOString());
- if(error) return NextResponse.json({error:'Availability could not be checked.'},{status:500});
+ if(error){
+  console.error('Availability query failed:',error);
+  return NextResponse.json({error:'Availability could not be checked.'},{status:500});
+ }
  const cutoff=Date.now()-30*60*1000;
  const blocking=(data??[]).some(b=>{
   if(['confirmed','active','pending'].includes(b.status)) return true;
