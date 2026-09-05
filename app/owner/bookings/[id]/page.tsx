@@ -170,7 +170,7 @@ export default async function BookingDetailsPage({ params, searchParams }: PageP
       redirect(`/owner/bookings/${id}?edit=load_failed`);
     }
 
-    if (!["pending", "pending_payment"].includes(currentBooking.status)) {
+    if (currentBooking.status !== "pending_payment") {
       redirect(`/owner/bookings/${id}?edit=not_pending`);
     }
 
@@ -179,7 +179,7 @@ export default async function BookingDetailsPage({ params, searchParams }: PageP
       .select("id, confirmation_code")
       .eq("trailer_id", currentBooking.trailer_id)
       .neq("id", id)
-      .in("status", ["pending_payment", "pending", "confirmed", "active"])
+      .in("status", ["pending_payment", "confirmed", "active"])
       .lt("pickup_at", returnAt.toISOString())
       .gt("return_at", pickupAt.toISOString())
       .limit(1);
@@ -216,7 +216,7 @@ export default async function BookingDetailsPage({ params, searchParams }: PageP
         total_cents: updatedSubtotalCents,
       })
       .eq("id", id)
-      .in("status", ["pending", "pending_payment"]);
+      .eq("status", "pending_payment");
 
     if (updateError) redirect(`/owner/bookings/${id}?edit=save_failed`);
 
@@ -265,7 +265,7 @@ export default async function BookingDetailsPage({ params, searchParams }: PageP
     );
   }
 
-  if (!["pending", "pending_payment"].includes(currentBooking.status)) {
+  if (currentBooking.status !== "pending_payment") {
     redirect(`/owner/bookings/${id}`);
   }
 
@@ -283,7 +283,7 @@ export default async function BookingDetailsPage({ params, searchParams }: PageP
     .select("id")
     .eq("trailer_id", currentBooking.trailer_id)
     .neq("id", id)
-    .in("status", ["pending_payment", "pending", "confirmed", "active"])
+    .in("status", ["pending_payment", "confirmed", "active"])
     .lt("pickup_at", currentBooking.return_at)
     .gt("return_at", currentBooking.pickup_at)
     .limit(1);
@@ -785,7 +785,7 @@ if (emailError) {
         .select("id, confirmation_code")
         .eq("trailer_id", currentBooking.trailer_id)
         .neq("id", currentBooking.id)
-        .in("status", ["pending_payment", "pending", "confirmed", "active"])
+        .in("status", ["pending_payment", "confirmed", "active"])
         .lt("pickup_at", approvedReturnAt)
         .gt("return_at", currentBooking.return_at)
         .limit(1);
@@ -1244,7 +1244,7 @@ if (booking.insurance_path) {
             </div>
           )}
 
-          {["pending", "pending_payment"].includes(booking.status) && (
+          {booking.status === "pending_payment" && (
             <form action={editBookingDates} className="panel" style={{ marginTop: 18 }}>
               <span className="eyebrow">Before approval</span>
               <h2>Edit Booking Schedule</h2>
@@ -1570,7 +1570,7 @@ if (booking.insurance_path) {
               gap: 12,
             }}
           >
-           {["pending", "pending_payment"].includes(booking.status) && (
+           {booking.status === "pending_payment" && (
   <>
     <form action={approveBooking} style={{ width: "100%" }}>
       <button className="btn" type="submit" disabled={!stepOneComplete} style={{ width: "100%" }}>
