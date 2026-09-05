@@ -27,6 +27,7 @@ export async function POST(request: Request) {
         drivers_license_path,
         insurance_path,
         stripe_customer_id
+        ,created_at
       `)
       .eq("id", bookingId)
       .single();
@@ -36,6 +37,11 @@ export async function POST(request: Request) {
         { error: "Booking not found." },
         { status: 404 }
       );
+    }
+
+    if (booking.status === "pending_payment" && Date.now() - new Date(booking.created_at).getTime() > 30 * 60 * 1000) {
+      await supabase.from("bookings").update({ status: "cancelled", cancelled_at: new Date().toISOString() }).eq("id", booking.id).eq("status", "pending_payment");
+      return NextResponse.json({ error: "This request expired after 30 minutes. Please choose the trailer and dates again." }, { status: 410 });
     }
 
     if (
