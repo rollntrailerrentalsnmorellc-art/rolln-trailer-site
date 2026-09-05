@@ -7,6 +7,7 @@ import { Resend } from "resend";
 import Stripe from "stripe";
 import { addOnTotal, parseRentalAddOns } from "@/lib/addons";
 import { TZDate } from "@date-fns/tz";
+import { createBalanceInvoice } from "@/lib/create-balance-invoice";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 const resend = new Resend(process.env.RESEND_API_KEY);
@@ -178,7 +179,7 @@ export default async function BookingDetailsPage({ params, searchParams }: PageP
       .select("id, confirmation_code")
       .eq("trailer_id", currentBooking.trailer_id)
       .neq("id", id)
-      .in("status", ["pending_payment", "confirmed", "active"])
+      .in("status", ["pending_payment", "pending", "confirmed", "active"])
       .lt("pickup_at", returnAt.toISOString())
       .gt("return_at", pickupAt.toISOString())
       .limit(1);
@@ -245,7 +246,15 @@ export default async function BookingDetailsPage({ params, searchParams }: PageP
       trailer_id,
       tow_rating_lbs,
       status,
-      stripe_balance_invoice_id
+      stripe_balance_invoice_id,
+      stripe_customer_id,
+      total_cents,
+      amount_paid_cents,
+      deposit_cents,
+      intake_completed_at,
+      agreement_accepted_at,
+      drivers_license_path,
+      insurance_path
       `)
     .eq("id", id)
     .single();
@@ -260,12 +269,21 @@ export default async function BookingDetailsPage({ params, searchParams }: PageP
     redirect(`/owner/bookings/${id}`);
   }
 
+  const stepOneComplete = Boolean(
+    currentBooking.intake_completed_at &&
+    currentBooking.agreement_accepted_at &&
+    currentBooking.drivers_license_path &&
+    currentBooking.insurance_path &&
+    (currentBooking.amount_paid_cents ?? 0) >= (currentBooking.deposit_cents ?? 5000)
+  );
+  if (!stepOneComplete) redirect(`/owner/bookings/${id}?edit=step_one_incomplete`);
+
   const { data: conflicts, error: conflictError } = await supabase
     .from("bookings")
     .select("id")
     .eq("trailer_id", currentBooking.trailer_id)
     .neq("id", id)
-    .in("status", ["pending_payment", "confirmed", "active"])
+    .in("status", ["pending_payment", "pending", "confirmed", "active"])
     .lt("pickup_at", currentBooking.return_at)
     .gt("return_at", currentBooking.pickup_at)
     .limit(1);
@@ -291,9 +309,11 @@ if (!currentBooking.tow_rating_lbs || currentBooking.tow_rating_lbs > 40000 || (
   redirect(`/owner/bookings/${id}?edit=tow_rating`);
 }
 
+  const invoiceId = await createBalanceInvoice(stripe, currentBooking);
+
   const { error } = await supabase
     .from("bookings")
-    .update({ status: "confirmed" })
+    .update({ status: "confirmed", stripe_balance_invoice_id: invoiceId })
     .eq("id", id);
 
   if (error) {
@@ -365,7 +385,7 @@ Return: ${formatDate(currentBooking.return_at)}
         </div>
 
         <p style="font-size:15px; line-height:1.6; margin:0 0 24px;">
-          We will contact you soon with your pickup location and any remaining payment information
+          Step 1 is complete and your request is approved. Stripe has emailed your final invoice. Please pay it and call or text us to discuss the meeting spot.
         </p>
 
           <h3 style="color:#7DFB00; margin:28px 0 12px;">
@@ -386,7 +406,7 @@ Next Steps
             href="${siteUrl}/booking/${currentBooking.confirmation_code}"
             style="display:inline-block; background:#7DFB00; color:#111827; text-decoration:none; font-weight:800; padding:14px 24px; border-radius:9px;"
           >
-            Pay $50 Deposit
+            View Reservation
           </a>
         </div>
 
@@ -765,7 +785,7 @@ if (emailError) {
         .select("id, confirmation_code")
         .eq("trailer_id", currentBooking.trailer_id)
         .neq("id", currentBooking.id)
-        .in("status", ["pending_payment", "confirmed", "active"])
+        .in("status", ["pending_payment", "pending", "confirmed", "active"])
         .lt("pickup_at", approvedReturnAt)
         .gt("return_at", currentBooking.return_at)
         .limit(1);
@@ -1085,6 +1105,7 @@ if (emailError) {
       amount_paid_cents,
       drivers_license_path,
       insurance_path,
+      intake_completed_at,
       stripe_checkout_session_id,
       stripe_payment_intent_id,
       stripe_balance_invoice_id,
@@ -1157,6 +1178,13 @@ if (booking.insurance_path) {
     (booking.total_cents ?? 0) - (booking.amount_paid_cents ?? 0),
     0
   );
+  const stepOneComplete = Boolean(
+    booking.intake_completed_at &&
+    booking.agreement_accepted_at &&
+    booking.drivers_license_path &&
+    booking.insurance_path &&
+    (booking.amount_paid_cents ?? 0) >= (booking.deposit_cents ?? 5000)
+  );
 
   return (
     <main>
@@ -1209,6 +1237,8 @@ if (booking.insurance_path) {
                 "Approval is blocked because the tow rating is missing, unrealistic, or below this trailer's GVWR. Verify the vehicle capacity and decline the request if it is unsuitable."}
               {editResult === "trailer_unavailable" &&
                 "Approval is blocked because this trailer is paused or archived."}
+              {editResult === "step_one_incomplete" &&
+                "Approval is blocked until the customer uploads both documents, signs the agreement, and pays the $50 deposit."}
               {["load_failed", "check_failed", "pricing_failed", "save_failed"].includes(editResult) &&
                 "The booking could not be updated. Please try again."}
             </div>
@@ -1543,8 +1573,8 @@ if (booking.insurance_path) {
            {["pending", "pending_payment"].includes(booking.status) && (
   <>
     <form action={approveBooking} style={{ width: "100%" }}>
-      <button className="btn" type="submit" style={{ width: "100%" }}>
-        Approve
+      <button className="btn" type="submit" disabled={!stepOneComplete} style={{ width: "100%" }}>
+        {stepOneComplete ? "Approve & Send Final Invoice" : "Waiting on Step 1"}
       </button>
     </form>
 
