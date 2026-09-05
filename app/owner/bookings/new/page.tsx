@@ -35,7 +35,7 @@ async function createOwnerBooking(formData:FormData){
  const {data:trailer,error:trailerError}=await admin.from('trailers').select('daily_rate_cents,weekly_rate_cents,deposit_cents,gvwr_lbs,status').eq('id',trailerId).single();
  if(trailerError||!trailer||trailer.status==='inactive')throw new Error('That trailer is archived or unavailable.');
  if(!Number.isInteger(towRating)||towRating<1000||towRating>40000||(trailer.gvwr_lbs&&towRating<trailer.gvwr_lbs))throw new Error('Verify that the tow rating is realistic and meets the trailer GVWR.');
- const {data:conflicts,error:conflictError}=await admin.from('bookings').select('id').eq('trailer_id',trailerId).in('status',['pending_payment','confirmed','active']).lt('pickup_at',returnAt.toISOString()).gt('return_at',pickup.toISOString()).limit(1);
+ const {data:conflicts,error:conflictError}=await admin.from('bookings').select('id').eq('trailer_id',trailerId).in('status',['pending_payment','pending','confirmed','active']).lt('pickup_at',returnAt.toISOString()).gt('return_at',pickup.toISOString()).limit(1);
  if(conflictError)throw new Error('Unable to verify availability.');
  if(conflicts?.length)throw new Error('Those dates overlap an existing reservation.');
  const days=Math.max(1,Math.ceil((returnAt.getTime()-pickup.getTime())/86400000));
