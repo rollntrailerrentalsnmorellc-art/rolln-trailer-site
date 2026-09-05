@@ -48,6 +48,7 @@ export default async function ReservationPage({ params }: PageProps) {
       card_on_file_authorized_at,
       owner_notes,
       total_cents
+      ,created_at
     `)
     .eq("confirmation_code", code)
     .single();
@@ -57,6 +58,13 @@ export default async function ReservationPage({ params }: PageProps) {
   }
 
   const selectedAddOns = parseRentalAddOns(booking.owner_notes);
+  const requestExpired = booking.status === "pending_payment" &&
+    Date.now() - new Date(booking.created_at).getTime() > 30 * 60 * 1000;
+  const depositPaid = (booking.amount_paid_cents ?? 0) >= (booking.deposit_cents ?? 5000);
+  const stepOneComplete = Boolean(
+    booking.intake_completed_at && booking.agreement_accepted_at &&
+    booking.drivers_license_path && booking.insurance_path && depositPaid
+  );
 
   let trailerName = "Trailer";
 
@@ -118,6 +126,20 @@ export default async function ReservationPage({ params }: PageProps) {
         </div>
 
         <div style={{ padding: 30 }}>
+          <div className="panel" style={{ marginBottom: 24 }}>
+            <h2 style={{ color: "#7DFB00", marginTop: 0 }}>Two-Step Booking</h2>
+            <p><strong>1. Request &amp; deposit</strong><br />Personal information, documents, signed agreement, and $50 deposit.</p>
+            <p style={{ marginBottom: 0, opacity: booking.status === "confirmed" || booking.status === "active" || booking.status === "completed" ? 1 : .65 }}><strong>2. After owner approval</strong><br />Pay the final invoice and discuss the meeting spot.</p>
+          </div>
+          {stepOneComplete && booking.status === "pending_payment" && (
+            <div className="notice" style={{ marginBottom: 24 }}><strong>✓ Step 1 complete</strong><br />Your request is waiting for owner approval. No final invoice is due until it is approved.</div>
+          )}
+          {requestExpired && (
+            <div className="notice" style={{ marginBottom: 24, borderColor: "#ef4444" }}><strong>This request expired</strong><br />Step 1 was not completed within 30 minutes, so the dates were released. Please return to the trailers page and start a new request.</div>
+          )}
+          {["confirmed", "active", "completed"].includes(booking.status) && (
+            <div className="notice" style={{ marginBottom: 24 }}><strong>Step 2: Approved</strong><br />Pay the final invoice sent by Stripe, then call or text us to arrange the meeting spot.</div>
+          )}
           <div
             style={{
               background: "#18201c",
@@ -180,7 +202,7 @@ export default async function ReservationPage({ params }: PageProps) {
             <p><strong>Quoted rental total:</strong> ${((booking.total_cents ?? 0) / 100).toFixed(2)}</p>
           </div>
 
-        <IntakeUploadForm
+        {!requestExpired && <><IntakeUploadForm
   confirmationCode={booking.confirmation_code}
   hasDriversLicense={Boolean(booking.drivers_license_path)}
   hasInsurance={Boolean(booking.insurance_path)}
@@ -190,7 +212,7 @@ export default async function ReservationPage({ params }: PageProps) {
    confirmationCode={booking.confirmation_code}
    alreadyAccepted={Boolean(booking.agreement_accepted_at)}
 />
-{(booking.amount_paid_cents ?? 0) >= (booking.deposit_cents ?? 5000) ? (
+{depositPaid ? (
   <div
     style={{
       marginTop: 24,
@@ -234,6 +256,7 @@ export default async function ReservationPage({ params }: PageProps) {
         </div>
       )
 )}
+</>}
           <p style={{ lineHeight: 1.7 }}>
             Questions or changes to your reservation? Call or text us at{" "}
             <a
