@@ -175,7 +175,6 @@ const returnDate = parseEasternDateTime(returnAt);
         .gt("return_at", pickupDate.toISOString())
         .in("status", [
           "pending_payment",
-          "pending",
           "confirmed",
           "active",
         ])
