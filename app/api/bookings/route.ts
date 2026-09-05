@@ -169,16 +169,17 @@ const returnDate = parseEasternDateTime(returnAt);
     const { data: conflictingBookings, error: availabilityError } =
       await supabase
         .from("bookings")
-        .select("id")
+        .select("id, status, created_at")
         .eq("trailer_id", trailerId)
         .lt("pickup_at", returnDate.toISOString())
         .gt("return_at", pickupDate.toISOString())
         .in("status", [
           "pending_payment",
+          "pending",
           "confirmed",
           "active",
         ])
-        .limit(1);
+        ;
 
     if (availabilityError) {
       return NextResponse.json(
@@ -189,10 +190,11 @@ const returnDate = parseEasternDateTime(returnAt);
       );
     }
 
-    if (
-      conflictingBookings &&
-      conflictingBookings.length > 0
-    ) {
+    const holdCutoff = Date.now() - 30 * 60 * 1000;
+    const hasConflict = (conflictingBookings ?? []).some(
+      (item) => item.status !== "pending_payment" || new Date(item.created_at).getTime() > holdCutoff
+    );
+    if (hasConflict) {
       return NextResponse.json(
         {
           error:
@@ -294,8 +296,9 @@ const addOnSummary = selectedAddOns.length
           </p>
 
           <p style="font-size:16px; line-height:1.6;">
-            Thank you for submitting your trailer rental request.
-            Your request has been received and is awaiting approval.
+            Thank you for starting your trailer rental request. Complete Step 1
+            now by uploading your documents, signing the rental agreement, and
+            paying the $50 deposit. The owner will review your request afterward.
           </p>
 
           <div style="
@@ -338,9 +341,10 @@ const addOnSummary = selectedAddOns.length
             </span>
           </div>
 
-          <p style="font-size:15px; line-height:1.7;">
-            This request is not yet approved. We will review it and contact you once it has been approved or declined.
-          </p>
+          <div style="text-align:center; margin:28px 0;">
+            <a href="${siteUrl}/booking/${booking.confirmation_code}" style="display:inline-block;background:#7DFB00;color:#111827;text-decoration:none;font-weight:800;padding:14px 22px;border-radius:8px;">Complete Documents &amp; Pay Deposit</a>
+          </div>
+          <p style="font-size:15px; line-height:1.7;">Your request is not approved until Step 1 is complete and the owner approves it.</p>
 
           <p style="font-size:15px; line-height:1.7;"><strong>Selected add-ons:</strong><br>${addOnSummary}</p>
 
@@ -375,11 +379,13 @@ const addOnSummary = selectedAddOns.length
 if (emailError) {
   console.error("Pending booking email failed:", emailError);
 }
-const { error: ownerEmailError } = await resend.emails.send({
+const ownerEmailError = null;
+if (booking && customerEmail && false) {
+await resend.emails.send({
   from: "Roll'N Trailer Rentals <bookings@rollntrailerrentals.com>",
   to: ["rollntrailer@gmail.com"],
-  replyTo: customerEmail.trim().toLowerCase(),
-  subject: `New booking request — ${trailer?.name ?? "Trailer"} — ${booking.confirmation_code}`,
+  replyTo: customerEmail!.trim().toLowerCase(),
+  subject: `New booking request — ${trailer?.name ?? "Trailer"} — ${booking!.confirmation_code}`,
   html: `
     <div style="margin:0; padding:24px; background:#f3f4f6; font-family:Arial,Helvetica,sans-serif; color:#111827;">
       <div style="max-width:620px; margin:0 auto; background:#ffffff; border-radius:14px; overflow:hidden;">
@@ -426,26 +432,26 @@ const { error: ownerEmailError } = await resend.emails.send({
           </div>
 
           <div style="line-height:1.8; font-size:15px;">
-            <strong>Customer:</strong> ${customerName.trim()}<br>
-            <strong>Email:</strong> ${customerEmail.trim().toLowerCase()}<br>
-            <strong>Phone:</strong> ${customerPhone.trim()}<br>
+            <strong>Customer:</strong> ${customerName!.trim()}<br>
+            <strong>Email:</strong> ${customerEmail!.trim().toLowerCase()}<br>
+            <strong>Phone:</strong> ${customerPhone!.trim()}<br>
             <strong>Tow vehicle:</strong> ${towVehicle?.trim() || "Not provided"}<br>
             <strong>Tow rating:</strong> ${
-              typeof towRatingLbs === "number" && towRatingLbs > 0
-                ? `${towRatingLbs.toLocaleString()} lbs`
+              (towRatingLbs ?? 0) > 0
+                ? `${towRatingLbs!.toLocaleString()} lbs`
                 : "Not provided"
             }<br>
             <strong>Intended use:</strong> ${intendedUse?.trim() || "Not provided"}<br>
             <strong>Add-ons:</strong><br>${addOnSummary}<br>
             <strong>Confirmation:</strong>
             <span style="color:#7DFB00; font-weight:800;">
-              ${booking.confirmation_code}
+              ${booking!.confirmation_code}
             </span>
           </div>
 
           <div style="text-align:center; margin:30px 0 10px;">
             <a
-              href="${siteUrl}/owner/bookings/${booking.id}"
+              href="${siteUrl}/owner/bookings/${booking!.id}"
               style="
                 display:inline-block;
                 background:#7DFB00;
@@ -469,6 +475,7 @@ const { error: ownerEmailError } = await resend.emails.send({
     </div>
   `,
 });
+}
 
 if (ownerEmailError) {
   console.error("Owner booking email failed:", ownerEmailError);
@@ -479,6 +486,7 @@ if (ownerEmailError) {
         bookingId: booking.id,
         confirmationCode:
           booking.confirmation_code,
+        nextUrl: `/booking/${booking.confirmation_code}`,
       },
       { status: 201 }
     );
