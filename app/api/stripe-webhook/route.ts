@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { Resend } from "resend";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function POST(request: Request) {
   try {
@@ -145,141 +147,28 @@ if (error) {
   );
 }
 
-if (
-  currentBooking.intake_completed_at &&
-  currentBooking.agreement_accepted_at &&
-  !currentBooking.stripe_balance_invoice_id &&
-  newAmountPaid >= (currentBooking.deposit_cents ?? 0)
-) {
-  const remainingBalance =
-    (currentBooking.total_cents ?? 0) - newAmountPaid;
-
-  if (remainingBalance > 0 && currentBooking.customer_email) {
-    const existingCustomers = await stripe.customers.list({
-      email: currentBooking.customer_email,
-      limit: 1,
-    });
-
-    let customerId: string;
-
-    if (existingCustomers.data.length > 0) {
-      customerId = existingCustomers.data[0].id;
-    } else {
-      const customer = await stripe.customers.create({
-        email: currentBooking.customer_email,
-        name: currentBooking.customer_name ?? undefined,
-        metadata: {
-          booking_id: currentBooking.id,
-          confirmation_code: currentBooking.confirmation_code,
-        },
-      });
-
-      customerId = customer.id;
-    }
-    const pickupDueDate = Math.floor(
-      new Date(currentBooking.pickup_at).getTime() / 1000
-    );
-    console.log("Starting balance invoice creation", {
-      bookingId: currentBooking.id,
-      customerId,
-      totalCents: currentBooking.total_cents,
-      depositCents: currentBooking.deposit_cents,
-      amountPaid: newAmountPaid,
-    });
-    const invoice = await stripe.invoices.create(
-      {
-        customer: customerId,
-        collection_method: "send_invoice",
-        due_date: Math.max(pickupDueDate, Math.floor(Date.now() / 1000) + 3600),
-        description: `Remaining balance for trailer rental ${currentBooking.confirmation_code}`,
-        metadata: {
-          booking_id: currentBooking.id,
-          confirmation_code: currentBooking.confirmation_code,
-        },
-      },
-      {
-        idempotencyKey: `balance-invoice-${currentBooking.id}`,
-      }
-    );
-
-    // Full rental price
-await stripe.invoiceItems.create(
-  {
-    customer: customerId,
-    invoice: invoice.id,
-    amount: currentBooking.total_cents ?? 0,
-    currency: "usd",
-    description: `Rental total — ${currentBooking.confirmation_code}`,
-  },
-  {
-    idempotencyKey: `balance-invoice-total-${currentBooking.id}`,
-  }
-);
-
-// Show deposit already paid as a credit
-const depositPaid = Math.min(
-  newAmountPaid,
-  currentBooking.deposit_cents ?? newAmountPaid
-);
-
-
-
-if (depositPaid > 0) {
-  
-  await stripe.invoiceItems.create(
-    {
-      customer: customerId,
-      invoice: invoice.id,
-      amount: -depositPaid,
-      currency: "usd",
-      description: `Deposit already paid — ${currentBooking.confirmation_code}`,
-    },
-    {
-      idempotencyKey: `balance-invoice-deposit-${currentBooking.id}`,
-    }
-  );
-
-  
-}
-
-    const finalizedInvoice = await stripe.invoices.finalizeInvoice(
-      invoice.id,
-      {},
-      {
-        idempotencyKey: `balance-invoice-finalize-${currentBooking.id}`,
-      }
-    );
-
-    await stripe.invoices.sendInvoice(
-      finalizedInvoice.id,
-      {},
-      {
-        idempotencyKey: `balance-invoice-send-${currentBooking.id}`,
-      }
-    );
-    
-    console.log("Balance invoice sent", {
-      bookingId: currentBooking.id,
-      invoiceId: finalizedInvoice.id,
-    });
-
-    const { error: invoiceSaveError } = await supabase
-      .from("bookings")
-      .update({
-        stripe_balance_invoice_id: finalizedInvoice.id,
-      })
-      .eq("id", currentBooking.id);
-
-    if (invoiceSaveError) {
-      console.error(
-        "Balance invoice created but invoice ID could not be saved:",
-        invoiceSaveError
-      );
-    }
-  }
-}
-
 console.log(`Deposit paid for booking ${bookingId}: ${session.id}`);
+
+const { data: readyBooking } = await supabase
+  .from("bookings")
+  .update({ status: "pending" })
+  .eq("id", bookingId)
+  .eq("status", "pending_payment")
+  .select("id")
+  .maybeSingle();
+
+if (readyBooking) {
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ??
+    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "https://rollntrailerrentals.com");
+  const { error: ownerEmailError } = await resend.emails.send({
+    from: "Roll'N Trailer Rentals <bookings@rollntrailerrentals.com>",
+    to: ["rollntrailer@gmail.com"],
+    replyTo: currentBooking.customer_email,
+    subject: `Ready for approval — ${currentBooking.confirmation_code}`,
+    html: `<div style="font-family:Arial,sans-serif;padding:24px"><h2>Booking ready for approval</h2><p><strong>${currentBooking.customer_name}</strong> has uploaded both documents, signed the rental agreement, and paid the $50 deposit.</p><p>Confirmation: <strong>${currentBooking.confirmation_code}</strong></p><p><a href="${siteUrl}/owner/bookings/${currentBooking.id}" style="display:inline-block;background:#7DFB00;color:#111827;padding:14px 22px;border-radius:8px;text-decoration:none;font-weight:800">Review &amp; Approve</a></p></div>`,
+  });
+  if (ownerEmailError) console.error("Ready-for-approval email failed:", ownerEmailError);
+}
 }
     }
 
