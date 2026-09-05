@@ -17,7 +17,7 @@ export async function GET(req:NextRequest){
  }
  const cutoff=Date.now()-30*60*1000;
  const blocking=(data??[]).some(b=>{
-  if(['confirmed','active','pending'].includes(b.status)) return true;
+  if(['confirmed','active'].includes(b.status)) return true;
   return b.status==='pending_payment'&&new Date(b.created_at).getTime()>cutoff;
  });
  return NextResponse.json({available:!blocking});
