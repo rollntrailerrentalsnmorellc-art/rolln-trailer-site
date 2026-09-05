@@ -1,5 +1,5 @@
 import {NextRequest,NextResponse} from 'next/server';
-import {createClient} from '@/lib/supabase/server';
+import {createAdminClient} from '@/lib/supabase/admin';
 
 export async function GET(req:NextRequest){
  const trailerId=req.nextUrl.searchParams.get('trailerId');
@@ -8,7 +8,7 @@ export async function GET(req:NextRequest){
  if(!trailerId||!pickup||!returnAt) return NextResponse.json({error:'Missing dates or trailer.'},{status:400});
  const start=new Date(pickup), end=new Date(returnAt);
  if(isNaN(start.valueOf())||isNaN(end.valueOf())||end<=start) return NextResponse.json({error:'Enter a valid pickup and return time.'},{status:400});
- const supabase=await createClient();
+ const supabase=createAdminClient();
  const {data,error}=await supabase.from('bookings').select('id,status,created_at').eq('trailer_id',trailerId)
   .in('status',['pending_payment','pending','confirmed','active']).lt('pickup_at',end.toISOString()).gt('return_at',start.toISOString());
  if(error) return NextResponse.json({error:'Availability could not be checked.'},{status:500});
