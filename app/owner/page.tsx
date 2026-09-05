@@ -24,13 +24,13 @@ export default async function Owner(){
  const monthStart=new TZDate(now.getFullYear(),now.getMonth(),1,0,0,0,'America/New_York');
  const fields='id,confirmation_code,status,pickup_at,return_at,customer_name,total_cents,amount_paid_cents,trailers(name)';
  const [pendingResult,activeResult,trailerResult,pickupResult,returnResult,revenueResult,balanceResult]=await Promise.all([
-  supabase.from('bookings').select(fields).in('status',['pending','pending_documents','pending_payment']).order('created_at',{ascending:false}).limit(8),
+  supabase.from('bookings').select(fields).in('status',['pending_documents','pending_payment']).order('created_at',{ascending:false}).limit(8),
   supabase.from('bookings').select('*',{count:'exact',head:true}).eq('status','active'),
   supabase.from('trailers').select('*',{count:'exact',head:true}).neq('status','inactive'),
   supabase.from('bookings').select(fields).gte('pickup_at',dayStart.toISOString()).lte('pickup_at',dayEnd.toISOString()).in('status',['confirmed','active']),
   supabase.from('bookings').select(fields).gte('return_at',dayStart.toISOString()).lte('return_at',dayEnd.toISOString()).in('status',['confirmed','active']),
   supabase.from('bookings').select('amount_paid_cents').gte('created_at',monthStart.toISOString()),
-  supabase.from('bookings').select('total_cents,amount_paid_cents').in('status',['pending','pending_documents','pending_payment','confirmed','active']),
+  supabase.from('bookings').select('total_cents,amount_paid_cents').in('status',['pending_documents','pending_payment','confirmed','active']),
  ]);
  const pending=(pendingResult.data??[]) as unknown as AppBooking[];
  const pickups=(pickupResult.data??[]) as unknown as AppBooking[];
