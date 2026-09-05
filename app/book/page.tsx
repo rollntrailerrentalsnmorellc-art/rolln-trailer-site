@@ -80,11 +80,7 @@ function BookingForm() {
         return;
       }
 
-      setMessage(
-        `Reservation submitted successfully. Confirmation: ${result.confirmationCode}`
-      );
-
-      form.reset();
+      window.location.assign(`/booking/${result.confirmationCode}`);
     } catch {
       setMessage("Unable to submit your reservation. Please try again.");
     } finally {
@@ -124,8 +120,9 @@ function BookingForm() {
           <h1>Complete Your Reservation</h1>
 
           <p className="muted">
-            Submit your information below. Your reservation remains pending
-            until approved by Roll&apos;N Trailer Rentals N More LLC.
+            Step 1 of 2: submit your information, upload your documents, sign
+            the rental agreement, and pay the $50 deposit. The owner will then
+            review your request.
           </p>
 
           <div
@@ -379,7 +376,7 @@ function BookingForm() {
                 width: "100%",
               }}
             >
-              {submitting ? "Submitting Reservation…" : "Submit Reservation"}
+              {submitting ? "Saving…" : "Continue to Documents & Deposit"}
             </button>
 
             {message && (
