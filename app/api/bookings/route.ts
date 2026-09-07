@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { Resend } from "resend";
 import { TZDate } from "@date-fns/tz"
 import { addOnTotal, selectRentalAddOns, serializeRentalAddOns } from "@/lib/addons";
+import { sendOwnerPush } from "@/lib/owner-push";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -266,6 +267,13 @@ const addOnSummary = selectedAddOns.length
         { status: 500 }
       );
     }
+
+    await sendOwnerPush({
+      title: "New booking request",
+      body: `${customerName.trim()} requested the ${trailer.name} · ${booking.confirmation_code}`,
+      url: `/owner/bookings/${booking.id}`,
+      tag: `booking-${booking.id}`,
+    });
 
     const { error: emailError } = await resend.emails.send({
   from: "Roll'N Trailer Rentals <bookings@rollntrailerrentals.com>",
