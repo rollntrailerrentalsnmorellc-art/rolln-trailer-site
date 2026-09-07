@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { Resend } from "resend";
+import { sendOwnerPush } from "@/lib/owner-push";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 const resend = new Resend(process.env.RESEND_API_KEY);
@@ -149,6 +150,13 @@ if (error) {
 
 console.log(`Deposit paid for booking ${bookingId}: ${session.id}`);
 
+await sendOwnerPush({
+  title: "Deposit paid",
+  body: `${currentBooking.customer_name} paid $${(paymentAmount / 100).toFixed(2)} · ${currentBooking.confirmation_code}`,
+  url: `/owner/bookings/${currentBooking.id}`,
+  tag: `deposit-${session.id}`,
+});
+
 if (currentBooking.intake_completed_at && currentBooking.agreement_accepted_at) {
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ??
     (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "https://rollntrailerrentals.com");
@@ -194,6 +202,12 @@ if (currentBooking.intake_completed_at && currentBooking.agreement_accepted_at) 
           stripe_receipt_url: stripeCharge?.receipt_url ?? null,
           paid_at: paidAt,
         }, { onConflict: "stripe_payment_intent_id" });
+        await sendOwnerPush({
+          title: "Payment received",
+          body: `$${(paymentIntent.amount_received / 100).toFixed(2)} was paid for a rental charge.`,
+          url: `/owner/bookings/${bookingId}`,
+          tag: `payment-${paymentIntent.id}`,
+        });
       }
     }
 
@@ -202,6 +216,13 @@ if (currentBooking.intake_completed_at && currentBooking.agreement_accepted_at) 
       const chargeId = paymentIntent.metadata?.charge_id;
       if (chargeId) {
         await createAdminClient().from("charges").update({ status: "failed" }).eq("id", chargeId);
+        const bookingId = paymentIntent.metadata?.booking_id;
+        await sendOwnerPush({
+          title: "Payment failed",
+          body: "A rental charge payment failed and needs attention.",
+          url: bookingId ? `/owner/bookings/${bookingId}` : "/owner/payments",
+          tag: `payment-failed-${paymentIntent.id}`,
+        });
       }
     }
 
@@ -233,6 +254,12 @@ if (currentBooking.intake_completed_at && currentBooking.agreement_accepted_at) 
             status: "succeeded",
             stripe_receipt_url: invoice.hosted_invoice_url,
             paid_at: paidAt,
+          });
+          await sendOwnerPush({
+            title: "Invoice paid",
+            body: `$${(invoice.amount_paid / 100).toFixed(2)} was paid for an additional rental charge.`,
+            url: `/owner/bookings/${bookingId}`,
+            tag: `invoice-${invoice.id}`,
           });
         }
 
@@ -296,6 +323,14 @@ if (currentBooking.intake_completed_at && currentBooking.agreement_accepted_at) 
               console.error("Unable to update booking after balance payment:", updateError);
             } else {
               console.log(`Balance paid for booking ${bookingId}: ${invoice.id}`);
+              if ((currentBooking.amount_paid_cents ?? 0) < (currentBooking.total_cents ?? invoice.amount_paid)) {
+                await sendOwnerPush({
+                  title: "Final invoice paid",
+                  body: `$${(invoice.amount_paid / 100).toFixed(2)} was received. The rental is paid in full.`,
+                  url: `/owner/bookings/${bookingId}`,
+                  tag: `invoice-${invoice.id}`,
+                });
+              }
             }
           }
         }
