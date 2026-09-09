@@ -1,6 +1,7 @@
 import {NextResponse} from 'next/server';
 import {createClient} from '@/lib/supabase/server';
 import {createAdminClient} from '@/lib/supabase/admin';
+import {sendOwnerPush} from '@/lib/owner-push';
 
 async function staffUser(){
  const supabase=await createClient();
@@ -19,7 +20,9 @@ export async function POST(request:Request){
  const auth=body?.keys?.auth;
  if(typeof endpoint!=='string'||typeof p256dh!=='string'||typeof auth!=='string')return NextResponse.json({error:'Invalid notification subscription.'},{status:400});
  const {error}=await createAdminClient().from('push_subscriptions').upsert({user_id:user.id,endpoint,p256dh,auth,user_agent:request.headers.get('user-agent'),last_used_at:new Date().toISOString()},{onConflict:'endpoint'});
- return error?NextResponse.json({error:error.message},{status:500}):NextResponse.json({ok:true});
+ if(error)return NextResponse.json({error:error.message},{status:500});
+ await sendOwnerPush({title:"Roll'N notifications are on",body:'You will now receive booking and payment alerts.',url:'/owner',tag:`notifications-enabled-${user.id}`});
+ return NextResponse.json({ok:true});
 }
 
 export async function DELETE(request:Request){
