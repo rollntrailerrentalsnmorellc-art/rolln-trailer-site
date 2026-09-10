@@ -38,6 +38,8 @@ const ownerChargeTypes = [
   "other",
 ] as const;
 
+const editableBookingStatuses = ["pending_payment", "declined", "cancelled"];
+
 type OwnerChargeType = (typeof ownerChargeTypes)[number];
 
 async function requireStaff() {
@@ -170,9 +172,11 @@ export default async function BookingDetailsPage({ params, searchParams }: PageP
       redirect(`/owner/bookings/${id}?edit=load_failed`);
     }
 
-    if (currentBooking.status !== "pending_payment") {
+    if (!editableBookingStatuses.includes(currentBooking.status)) {
       redirect(`/owner/bookings/${id}?edit=not_pending`);
     }
+
+    const wasClosed = ["declined", "cancelled"].includes(currentBooking.status);
 
     const { data: conflicts, error: conflictError } = await admin
       .from("bookings")
@@ -209,6 +213,8 @@ export default async function BookingDetailsPage({ params, searchParams }: PageP
     const { error: updateError } = await admin
       .from("bookings")
       .update({
+        status: "pending_payment",
+        cancelled_at: null,
         pickup_at: pickupAt.toISOString(),
         return_at: returnAt.toISOString(),
         subtotal_cents: updatedSubtotalCents,
@@ -216,14 +222,61 @@ export default async function BookingDetailsPage({ params, searchParams }: PageP
         total_cents: updatedSubtotalCents,
       })
       .eq("id", id)
-      .eq("status", "pending_payment");
+      .in("status", editableBookingStatuses);
 
     if (updateError) redirect(`/owner/bookings/${id}?edit=save_failed`);
 
     revalidatePath(`/owner/bookings/${id}`);
     revalidatePath("/owner/bookings");
     revalidatePath("/owner");
-    redirect(`/owner/bookings/${id}?edit=updated`);
+    redirect(`/owner/bookings/${id}?edit=${wasClosed ? "reopened" : "updated"}`);
+  }
+
+  async function reopenBooking() {
+    "use server";
+
+    await requireStaff();
+
+    const admin = createAdminClient();
+    const { data: currentBooking, error: bookingError } = await admin
+      .from("bookings")
+      .select("id, status, trailer_id, pickup_at, return_at")
+      .eq("id", id)
+      .single();
+
+    if (bookingError || !currentBooking) {
+      redirect(`/owner/bookings/${id}?edit=load_failed`);
+    }
+
+    if (!["declined", "cancelled"].includes(currentBooking.status)) {
+      redirect(`/owner/bookings/${id}`);
+    }
+
+    const { data: conflicts, error: conflictError } = await admin
+      .from("bookings")
+      .select("id")
+      .eq("trailer_id", currentBooking.trailer_id)
+      .neq("id", id)
+      .in("status", ["pending_payment", "confirmed", "active"])
+      .lt("pickup_at", currentBooking.return_at)
+      .gt("return_at", currentBooking.pickup_at)
+      .limit(1);
+
+    if (conflictError) redirect(`/owner/bookings/${id}?edit=check_failed`);
+    if (conflicts?.length) redirect(`/owner/bookings/${id}?edit=conflict`);
+
+    const { error: updateError } = await admin
+      .from("bookings")
+      .update({ status: "pending_payment", cancelled_at: null })
+      .eq("id", id)
+      .in("status", ["declined", "cancelled"]);
+
+    if (updateError) redirect(`/owner/bookings/${id}?edit=save_failed`);
+
+    revalidatePath(`/owner/bookings/${id}`);
+    revalidatePath("/owner/bookings");
+    revalidatePath("/owner");
+    redirect(`/owner/bookings/${id}?edit=reopened`);
   }
 
   async function approveBooking() {
@@ -1218,21 +1271,22 @@ if (booking.insurance_path) {
             </div>
           )}
 
-          {editResult === "updated" && (
+          {["updated", "reopened"].includes(editResult ?? "") && (
             <div className="notice" style={{ marginTop: 18 }}>
-              Booking dates, times, and rental price were updated. The request
-              is still pending and can now be approved.
+              {editResult === "reopened"
+                ? "Booking reopened successfully. You can edit it or approve it when ready."
+                : "Booking dates, times, and rental price were updated. The request is still pending and can now be approved."}
             </div>
           )}
 
-          {editResult && editResult !== "updated" && (
+          {editResult && !["updated", "reopened"].includes(editResult) && (
             <div className="notice" style={{ marginTop: 18 }}>
               {editResult === "invalid" &&
                 "Choose a valid pickup and return time. The return must be after pickup."}
               {editResult === "conflict" &&
                 "Those dates overlap another pending, confirmed, or active rental. Choose different times before approving."}
               {editResult === "not_pending" &&
-                "Only bookings waiting for approval can be edited here."}
+                "Only pending, declined, or cancelled bookings can be edited here."}
               {editResult === "tow_rating" &&
                 "Approval is blocked because the tow rating is missing, unrealistic, or below this trailer's GVWR. Verify the vehicle capacity and decline the request if it is unsuitable."}
               {editResult === "trailer_unavailable" &&
@@ -1244,14 +1298,16 @@ if (booking.insurance_path) {
             </div>
           )}
 
-          {booking.status === "pending_payment" && (
+          {editableBookingStatuses.includes(booking.status) && (
             <form action={editBookingDates} className="panel" style={{ marginTop: 18 }}>
               <span className="eyebrow">Before approval</span>
-              <h2>Edit Booking Schedule</h2>
+              <h2>{["declined", "cancelled"].includes(booking.status) ? "Edit & Reopen Booking" : "Edit Booking Schedule"}</h2>
               <p className="muted">
-                Change the requested pickup or return time, then save. The site
-                will check availability and recalculate the daily or weekly
-                rental price. Saving does not approve the booking.
+                Change the requested pickup or return time, then save. The site will
+                check availability and recalculate the rental price.
+                {["declined", "cancelled"].includes(booking.status)
+                  ? " Saving will reopen the booking for review without notifying the customer."
+                  : " Saving does not approve the booking."}
               </p>
 
               <div
@@ -1286,7 +1342,9 @@ if (booking.insurance_path) {
               </div>
 
               <button className="btn secondary" type="submit" style={{ width: "100%", marginTop: 18 }}>
-                Save New Dates &amp; Recalculate Price
+                {["declined", "cancelled"].includes(booking.status)
+                  ? "Save Changes & Reopen"
+                  : "Save New Dates & Recalculate Price"}
               </button>
 
               <p className="muted" style={{ marginBottom: 0 }}>
@@ -1671,18 +1729,25 @@ if (booking.insurance_path) {
             )}
 
             {["cancelled", "declined"].includes(booking.status) && (
-              <div
-                style={{
-                  padding: 14,
-                  textAlign: "center",
-                  borderRadius: 8,
-                  background: "#1f2937",
-                  color: "#ef4444",
-                  fontWeight: 700,
-                }}
-              >
-                Booking Declined
-              </div>
+              <>
+                <form action={reopenBooking} style={{ width: "100%" }}>
+                  <button className="btn" type="submit" style={{ width: "100%" }}>
+                    Reopen for Review
+                  </button>
+                </form>
+                <div
+                  style={{
+                    padding: 14,
+                    textAlign: "center",
+                    borderRadius: 8,
+                    background: "#1f2937",
+                    color: "#ef4444",
+                    fontWeight: 700,
+                  }}
+                >
+                  Booking {booking.status === "declined" ? "Declined" : "Cancelled"}
+                </div>
+              </>
             )}
           </div>
         </div>
