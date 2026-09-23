@@ -34,6 +34,12 @@ export default function EquipmentPage(){
       <div className="chips"><span className="chip">Adjustable ladder</span><span className="chip">$50 deposit</span></div>
       <a className="btn" href="sms:7066996990">Ask About the Ladder</a>
     </div></article>
+    <article id="scaffold" className="trailer"><div className="trailer-body">
+      <h3>Single-Stack Baker Scaffold</h3>
+      <p className="muted">One-section portable Baker-style scaffold for painting, maintenance and other elevated work. Platform height and load rating to be confirmed.</p>
+      <div className="chips"><span className="chip">Single stack</span><span className="chip">Rates &amp; deposit coming soon</span></div>
+      <a className="btn" href="sms:7066996990">Ask About the Scaffold</a>
+    </div></article>
     <article className="trailer"><div className="trailer-body">
       <h3>Additional Generator Coming Soon</h3><p className="muted">Another generator is being added. Model details and rental information will be posted once confirmed.</p>
       <div className="chips"><span className="chip">New inventory</span><span className="chip">Local rentals</span></div>
