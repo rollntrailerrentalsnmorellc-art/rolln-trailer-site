@@ -31,7 +31,7 @@ export default function EquipmentPage(){
       <h3>Adjustable Aluminum Ladder</h3>
       <p className="muted">Versatile adjustable aluminum ladder for projects around the house or job site. Approximately 24 ft; exact size to be confirmed before rental.</p>
       <p className="price">$25 / day · $110 / week</p>
-      <div className="chips"><span className="chip">Adjustable ladder</span><span className="chip">Deposit: ask for details</span></div>
+      <div className="chips"><span className="chip">Adjustable ladder</span><span className="chip">$50 deposit</span></div>
       <a className="btn" href="sms:7066996990">Ask About the Ladder</a>
     </div></article>
     <article className="trailer"><div className="trailer-body">
