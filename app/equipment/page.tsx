@@ -15,7 +15,7 @@ export default function EquipmentPage(){
   </div></div></section>
   <section id="equipment"><div className="container"><div className="section-head">
     <span className="eyebrow">Our expanding equipment fleet</span><h2>Available equipment categories</h2>
-    <p className="muted">Our equipment lineup now includes a Generac GP6500 generator and a Harbor Freight Predator gas-powered earth auger. See daily and weekly rates below, or contact us for current availability.</p>
+    <p className="muted">Our equipment lineup includes a Generac GP6500 generator, a Harbor Freight Predator gas-powered earth auger, and an adjustable aluminum ladder. See daily and weekly rates below, or contact us for current availability.</p>
   </div><div className="grid three">
     <article id="generators" className="trailer"><div className="trailer-body">
       <h3>Generac GP6500 Generator</h3><p className="muted">Gas-powered portable generator for temporary power, job sites and backup power needs. Call or text to confirm availability.</p><p className="price">$60 / 24 hours · $300 / week</p>
@@ -26,6 +26,13 @@ export default function EquipmentPage(){
       <h3>Predator Gas-Powered Earth Auger</h3><p className="muted">Harbor Freight Predator earth auger for fence posts, planting and digging jobs. Contact us for available bit sizes and availability.</p><p className="price">$50 / 24 hours · $250 / week</p>
       <div className="chips"><span className="chip">Power equipment</span><span className="chip">$50 deposit</span></div>
       <a className="btn" href="sms:7066996990">Ask About the Auger</a>
+    </div></article>
+    <article id="ladders" className="trailer"><div className="trailer-body">
+      <h3>Adjustable Aluminum Ladder</h3>
+      <p className="muted">Versatile adjustable aluminum ladder for projects around the house or job site. Approximately 24 ft; exact size to be confirmed before rental.</p>
+      <p className="price">$25 / day · $110 / week</p>
+      <div className="chips"><span className="chip">Adjustable ladder</span><span className="chip">Deposit: ask for details</span></div>
+      <a className="btn" href="sms:7066996990">Ask About the Ladder</a>
     </div></article>
     <article className="trailer"><div className="trailer-body">
       <h3>Additional Generator Coming Soon</h3><p className="muted">Another generator is being added. Model details and rental information will be posted once confirmed.</p>
