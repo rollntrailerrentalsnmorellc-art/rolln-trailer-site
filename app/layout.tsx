@@ -18,6 +18,9 @@ export const metadata: Metadata = {
     'trailer rental CSRA',
     'trailer rental Evans GA',
     'trailer rental Grovetown GA',
+    'generator rental Augusta GA',
+    'equipment rental Augusta GA',
+    'auger rental Augusta GA',
   ],
   alternates: { canonical: siteUrl },
   applicationName: "Roll'N Trailer Rentals N More LLC",
@@ -46,11 +49,11 @@ export default function RootLayout({children}:{children:React.ReactNode}) {
  return <html lang="en"><body>
   <header className="top"><div className="container nav">
    <Link className="brand" href="/"><img src="/images/RTRlogo.png" alt="Roll'N Trailer Rentals logo"/><strong>ROLL'N TRAILER<br/>RENTALS N MORE</strong></Link>
-   <nav className="desktop-nav"><Link href="/#trailers">Trailers</Link><Link href="/#how">How It Works</Link><Link href="/portal">Customer Portal</Link><Link href="/owner">Owner</Link></nav>
-   <Link className="btn" href="/#trailers">Book Now</Link>
+   <nav className="desktop-nav"><Link href="/#trailers">Trailers</Link><Link href="/equipment">Equipment</Link><Link href="/#how">How It Works</Link><Link href="/portal">Customer Portal</Link><Link href="/owner">Owner</Link></nav>
+   <Link className="btn" href="/#rentals">Rent Now</Link>
   </div></header>
   {children}
   <footer className="footer"><div className="container"><strong>Roll'N Trailer Rentals N More LLC</strong><p>Serving Augusta, Evans, Grovetown, Martinez, Harlem, North Augusta, Aiken and nearby CSRA communities.</p><p><a href="mailto:rollntrailer@gmail.com">rollntrailer@gmail.com</a> · <a href="tel:7066996990">706-699-6990</a> · Rental requests available 24/7</p></div></footer>
-  <div className="mobilebar"><a href="tel:7066996990">Call</a><a href="sms:7066996990">Text</a><a href="/#trailers">Book</a></div>
+  <div className="mobilebar"><a href="tel:7066996990">Call</a><a href="sms:7066996990">Text</a><a href="/#rentals">Rent</a></div>
  </body></html>
 }
