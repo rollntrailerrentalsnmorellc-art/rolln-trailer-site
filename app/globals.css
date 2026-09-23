@@ -31,3 +31,7 @@ body:has(.owner-app){padding-bottom:0;background:#070907}body:has(.owner-app)>.t
 .owner-app-header-actions{gap:6px}.owner-icon-button{width:40px;height:40px;border-radius:12px;font-size:1.2rem}.owner-icon-button.active{color:#39d353;border-color:#39d353;background:rgba(57,211,83,.14)}.owner-icon-button.spinning{animation:owner-spin .7s linear infinite}@keyframes owner-spin{to{transform:rotate(360deg)}}
 
 .owner-notification-status{position:sticky;top:64px;z-index:69;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 14px;background:#7c2d12;color:#fff;font-size:.84rem;font-weight:800}.owner-notification-status.success{background:#14532d}.owner-notification-status button{border:0;background:transparent;color:#fff;font-size:1.4rem;line-height:1}
+
+/* Separate trailer and equipment rental categories */
+.rental-categories{grid-template-columns:minmax(0,1fr)}
+@media(min-width:760px){.rental-categories{grid-template-columns:repeat(2,minmax(0,1fr))}}
