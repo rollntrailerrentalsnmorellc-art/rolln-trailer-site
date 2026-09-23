@@ -15,20 +15,20 @@ export default function EquipmentPage(){
   </div></div></section>
   <section id="equipment"><div className="container"><div className="section-head">
     <span className="eyebrow">Our expanding equipment fleet</span><h2>Available equipment categories</h2>
-    <p className="muted">Generators, augers and power tools all live here. Exact models, specifications, rental rates and online availability will be added as inventory is finalized.</p>
+    <p className="muted">Our equipment lineup now includes a Generac GP6500 generator and a Harbor Freight Predator gas-powered earth auger. Contact us for current availability and rates.</p>
   </div><div className="grid three">
     <article id="generators" className="trailer"><div className="trailer-body">
-      <h3>Generators</h3><p className="muted">Portable power for backup needs, job sites, outdoor events and temporary power.</p>
+      <h3>Generac GP6500 Generator</h3><p className="muted">Gas-powered portable generator for temporary power, job sites and backup power needs. Contact us for rental rates and availability.</p>
       <div className="chips"><span className="chip">Portable power</span><span className="chip">Call or text</span></div>
       <a className="btn" href="tel:7066996990">Check Availability</a>
     </div></article>
     <article id="tools" className="trailer"><div className="trailer-body">
-      <h3>Augers</h3><p className="muted">For fence posts, planting and digging jobs. Model and bit sizes will be listed as inventory is finalized.</p>
+      <h3>Predator Gas-Powered Earth Auger</h3><p className="muted">Harbor Freight Predator earth auger for fence posts, planting and digging jobs. Contact us for available bit sizes, rental rates and availability.</p>
       <div className="chips"><span className="chip">Power equipment</span><span className="chip">Call or text</span></div>
       <a className="btn" href="sms:7066996990">Ask About the Auger</a>
     </div></article>
     <article className="trailer"><div className="trailer-body">
-      <h3>More Equipment Coming</h3><p className="muted">We are adding useful power tools and rental equipment as the N More fleet grows.</p>
+      <h3>Additional Generator Coming Soon</h3><p className="muted">Another generator is being added. Model details and rental information will be posted once confirmed.</p>
       <div className="chips"><span className="chip">New inventory</span><span className="chip">Local rentals</span></div>
       <a className="btn" href="tel:7066996990">Ask What's Available</a>
     </div></article>
