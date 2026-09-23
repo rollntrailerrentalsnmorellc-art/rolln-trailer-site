@@ -37,7 +37,8 @@ export default function EquipmentPage(){
     <article id="scaffold" className="trailer"><div className="trailer-body">
       <h3>Single-Stack Baker Scaffold</h3>
       <p className="muted">One-section portable Baker-style scaffold for painting, maintenance and other elevated work. Platform height and load rating to be confirmed.</p>
-      <div className="chips"><span className="chip">Single stack</span><span className="chip">Rates &amp; deposit coming soon</span></div>
+      <p className="price">$35 / 24 hours · $150 / week</p>
+      <div className="chips"><span className="chip">Single stack</span><span className="chip">$50 deposit</span></div>
       <a className="btn" href="sms:7066996990">Ask About the Scaffold</a>
     </div></article>
     <article className="trailer"><div className="trailer-body">
