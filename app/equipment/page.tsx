@@ -17,24 +17,24 @@ export default function EquipmentPage(){
     <span className="eyebrow">Our expanding equipment fleet</span><h2>Available equipment categories</h2>
     <p className="muted">Our equipment lineup includes a Generac GP6500 generator, a Harbor Freight Predator gas-powered earth auger, and an adjustable aluminum ladder. See daily and weekly rates below, or contact us for current availability.</p>
   </div><div className="grid three">
-    <article id="generators" className="trailer"><div className="trailer-body">
+    <article id="generators" className="trailer"><img loading="lazy" src="https://www.mainstreetmower.com/cdn/shop/products/5940--A_2.png?v=1674157769&width=1214" alt="Illustrative stock product photo of a Generac GP6500 generator" /><div className="trailer-body"><small className="muted">Illustrative product photo · Main Street Mower</small>
       <h3>Generac GP6500 Generator</h3><p className="muted">Gas-powered portable generator for temporary power, job sites and backup power needs. Call or text to confirm availability.</p><p className="price">$60 / 24 hours · $300 / week</p>
       <div className="chips"><span className="chip">Portable power</span><span className="chip">$50 deposit</span></div>
       <a className="btn" href="tel:7066996990">Check Availability</a>
     </div></article>
-    <article id="tools" className="trailer"><div className="trailer-body">
+    <article id="tools" className="trailer"><img loading="lazy" src="https://d1886jwfak369j.cloudfront.net/media/products/166/730e12ce-7cea-4a2c-889d-8fc86cac03f6.jpeg" alt="Illustrative stock product photo of a Predator gas-powered earth auger" /><div className="trailer-body"><small className="muted">Illustrative product photo · FerreDepot</small>
       <h3>Predator Gas-Powered Earth Auger</h3><p className="muted">Harbor Freight Predator earth auger for fence posts, planting and digging jobs. Contact us for available bit sizes and availability.</p><p className="price">$50 / 24 hours · $250 / week</p>
       <div className="chips"><span className="chip">Power equipment</span><span className="chip">$50 deposit</span></div>
       <a className="btn" href="sms:7066996990">Ask About the Auger</a>
     </div></article>
-    <article id="ladders" className="trailer"><div className="trailer-body">
+    <article id="ladders" className="trailer"><img loading="lazy" src="https://wernerco.widen.net/content/thwktpld8v/jpeg/MT-26_PI_LeaningExtended.jpeg?color=ffffffff&amp;h=1200&amp;position=c&amp;quality=80&amp;u=qlpvmu&amp;w=1200" alt="Illustrative Werner MT-26 multi-position aluminum ladder product photo" /><div className="trailer-body"><small className="muted">Illustrative product photo · Werner</small>
       <h3>Werner MT-26 Mk 6 Multi-Position Ladder</h3>
       <p className="muted">25 ft adjustable aluminum multi-position ladder, Type IA extra heavy duty, rated for 300 lb total load including user and materials. Manufacturer-listed maximum reach: 25 ft 10 in. Follow manufacturer instructions for each configuration.</p>
       <p className="price">$25 / day · $110 / week</p>
       <div className="chips"><span className="chip">Adjustable ladder</span><span className="chip">$50 deposit</span></div>
       <a className="btn" href="sms:7066996990">Ask About the Ladder</a>
     </div></article>
-    <article id="scaffold" className="trailer"><div className="trailer-body">
+    <article id="scaffold" className="trailer"><img loading="lazy" src="https://www.actionis.com/media/catalog/product/1/6/1636349.jpg?bg-color=255%2C255%2C255&amp;canvas=700%3A700&amp;fit=bounds&amp;height=700&amp;quality=80&amp;width=700" alt="Illustrative stock photo of a single-stack Baker-style rolling scaffold" /><div className="trailer-body"><small className="muted">Illustrative product photo · Action Industrial Supply</small>
       <h3>Single-Stack Baker Scaffold</h3>
       <p className="muted">One-section portable Baker-style scaffold for painting, maintenance and other elevated work. Platform height and load rating to be confirmed.</p>
       <p className="price">$35 / 24 hours · $150 / week</p>
