@@ -28,8 +28,8 @@ export default function EquipmentPage(){
       <a className="btn" href="sms:7066996990">Ask About the Auger</a>
     </div></article>
     <article id="ladders" className="trailer"><div className="trailer-body">
-      <h3>Adjustable Aluminum Ladder</h3>
-      <p className="muted">Versatile adjustable aluminum ladder for projects around the house or job site. Approximately 24 ft; exact size to be confirmed before rental.</p>
+      <h3>Werner MT-26 Mk 6 Multi-Position Ladder</h3>
+      <p className="muted">25 ft adjustable aluminum multi-position ladder, Type IA extra heavy duty, rated for 300 lb total load including user and materials. Manufacturer-listed maximum reach: 25 ft 10 in. Follow manufacturer instructions for each configuration.</p>
       <p className="price">$25 / day · $110 / week</p>
       <div className="chips"><span className="chip">Adjustable ladder</span><span className="chip">$50 deposit</span></div>
       <a className="btn" href="sms:7066996990">Ask About the Ladder</a>
