@@ -24,7 +24,7 @@ Fuel/consumables supplied: [record outgoing fuel level for generator/auger, the 
 6. **Deposit and payment.** The $50 refundable security deposit is separate from the rental price, collected before pickup, and is not a limit on responsibility for loss or damage. After return and inspection, return the remaining deposit less documented charges authorized by the final agreement. [Implement collection/refund method and state any saved-card authorization separately and plainly.]
 7. **Incidents.** Renter will stop operation, seek emergency help when needed, and notify us as soon as safely possible of an injury, accident, theft, fire, or other incident involving the equipment.
 8. **Agreement and signature.** This agreement, the completed rental details, and documented condition report form the rental record. The renter confirms the equipment, dates, price, and terms before signing electronically. Georgia law recognizes electronic signatures; preserve the signed version and an audit record.
-9. **Cancellation before pickup.** Renter may cancel before pickup without a cancellation fee. If the rental has not started, refund any rental payment and the security deposit already collected.
+9. **Cancellation before pickup.** Renter may cancel at least two hours before the agreed pickup time without a fee. A cancellation less than two hours before the agreed pickup time incurs a $25 fee. If the rental has not started and amounts were paid, refund the rental payment and security deposit less the $25 fee, if applicable. No cancellation fee applies if we cancel or cannot provide the equipment.
 
 ## Decisions before customer use
 
