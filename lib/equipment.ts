@@ -20,7 +20,7 @@ export const equipment: EquipmentItem[] = [
   },
   {
     id: 'predator-earth-auger', name: 'Predator Gas-Powered Earth Auger',
-    description: 'Harbor Freight Predator earth auger for fence posts, planting and digging jobs. Ask about available bit sizes.',
+    description: 'Harbor Freight Predator gas-powered earth auger with a 6-inch bit for fence posts, planting and digging jobs.',
     image: 'https://d1886jwfak369j.cloudfront.net/media/products/166/730e12ce-7cea-4a2c-889d-8fc86cac03f6.jpeg',
     imageAlt: 'Illustrative stock product photo of a Predator gas-powered earth auger',
     imageCredit: 'FerreDepot', dailyRateCents: 5000, weeklyRateCents: 25000, depositCents: 5000,
