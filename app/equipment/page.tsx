@@ -1,52 +1,38 @@
 import Link from 'next/link';
 import type { Metadata } from 'next';
+import {equipment} from '@/lib/equipment';
+import EquipmentRequestForm from './EquipmentRequestForm';
 
 export const metadata: Metadata = {
  title: 'Equipment Rentals in Augusta, GA',
  description: "Generators, augers, power tools and equipment rentals from Roll'N Trailer Rentals N More LLC serving Augusta and the CSRA.",
 };
 
-export default function EquipmentPage(){
+export default async function EquipmentPage({searchParams}:{searchParams:Promise<{item?:string}>}){
+ const {item: initialItem}=await searchParams;
  return <main>
   <section className="hero"><div className="container"><div className="card hero-copy">
     <span className="eyebrow">The N More part</span><h1>Equipment rentals</h1>
     <p>We are expanding beyond trailers with generators, outdoor power equipment and specialty tools for projects around the CSRA.</p>
-    <div className="actions"><a className="btn" href="tel:7066996990">Call for Availability</a><a className="btn2" href="sms:7066996990">Text Us</a></div>
+    <div className="actions"><a className="btn" href="#request-equipment">Request Equipment</a><a className="btn2" href="tel:7066996990">Call Us</a></div>
   </div></div></section>
   <section id="equipment"><div className="container"><div className="section-head">
     <span className="eyebrow">Our expanding equipment fleet</span><h2>Available equipment categories</h2>
-    <p className="muted">Our equipment lineup includes a Generac GP6500 generator, a Harbor Freight Predator gas-powered earth auger, and an adjustable aluminum ladder. See daily and weekly rates below, or contact us for current availability.</p>
+    <p className="muted">See daily and weekly rates below and send your preferred dates. We will check availability and confirm your rental directly.</p>
   </div><div className="grid three">
-    <article id="generators" className="trailer"><img loading="lazy" src="https://www.mainstreetmower.com/cdn/shop/products/5940--A_2.png?v=1674157769&width=1214" alt="Illustrative stock product photo of a Generac GP6500 generator" /><div className="trailer-body"><small className="muted">Illustrative product photo · Main Street Mower</small>
-      <h3>Generac GP6500 Generator</h3><p className="muted">Gas-powered portable generator for temporary power, job sites and backup power needs. Call or text to confirm availability.</p><p className="price">$60 / 24 hours · $300 / week</p>
-      <div className="chips"><span className="chip">Portable power</span><span className="chip">$50 deposit</span></div>
-      <a className="btn" href="tel:7066996990">Check Availability</a>
-    </div></article>
-    <article id="tools" className="trailer"><img loading="lazy" src="https://d1886jwfak369j.cloudfront.net/media/products/166/730e12ce-7cea-4a2c-889d-8fc86cac03f6.jpeg" alt="Illustrative stock product photo of a Predator gas-powered earth auger" /><div className="trailer-body"><small className="muted">Illustrative product photo · FerreDepot</small>
-      <h3>Predator Gas-Powered Earth Auger</h3><p className="muted">Harbor Freight Predator earth auger for fence posts, planting and digging jobs. Contact us for available bit sizes and availability.</p><p className="price">$50 / 24 hours · $250 / week</p>
-      <div className="chips"><span className="chip">Power equipment</span><span className="chip">$50 deposit</span></div>
-      <a className="btn" href="sms:7066996990">Ask About the Auger</a>
-    </div></article>
-    <article id="ladders" className="trailer"><img loading="lazy" src="https://wernerco.widen.net/content/thwktpld8v/jpeg/MT-26_PI_LeaningExtended.jpeg?color=ffffffff&amp;h=1200&amp;position=c&amp;quality=80&amp;u=qlpvmu&amp;w=1200" alt="Illustrative Werner MT-26 multi-position aluminum ladder product photo" /><div className="trailer-body"><small className="muted">Illustrative product photo · Werner</small>
-      <h3>Werner MT-26 Mk 6 Multi-Position Ladder</h3>
-      <p className="muted">25 ft adjustable aluminum multi-position ladder, Type IA extra heavy duty, rated for 300 lb total load including user and materials. Manufacturer-listed maximum reach: 25 ft 10 in. Follow manufacturer instructions for each configuration.</p>
-      <p className="price">$25 / day · $110 / week</p>
-      <div className="chips"><span className="chip">Adjustable ladder</span><span className="chip">$50 deposit</span></div>
-      <a className="btn" href="sms:7066996990">Ask About the Ladder</a>
-    </div></article>
-    <article id="scaffold" className="trailer"><img loading="lazy" src="https://www.actionis.com/media/catalog/product/1/6/1636349.jpg?bg-color=255%2C255%2C255&amp;canvas=700%3A700&amp;fit=bounds&amp;height=700&amp;quality=80&amp;width=700" alt="Illustrative stock photo of a single-stack Baker-style rolling scaffold" /><div className="trailer-body"><small className="muted">Illustrative product photo · Action Industrial Supply</small>
-      <h3>Single-Stack Baker Scaffold</h3>
-      <p className="muted">One-section portable Baker-style scaffold for painting, maintenance and other elevated work. Platform height and load rating to be confirmed.</p>
-      <p className="price">$35 / 24 hours · $150 / week</p>
-      <div className="chips"><span className="chip">Single stack</span><span className="chip">$50 deposit</span></div>
-      <a className="btn" href="sms:7066996990">Ask About the Scaffold</a>
-    </div></article>
+    {equipment.map(item=><article id={item.id} className="trailer" key={item.id}><img loading="lazy" src={item.image} alt={item.imageAlt}/><div className="trailer-body"><small className="muted">Illustrative product photo · {item.imageCredit}</small>
+      <h3>{item.name}</h3><p className="muted">{item.description}</p>
+      <p className="price">${item.dailyRateCents/100} / 24 hours · ${item.weeklyRateCents/100} / week</p>
+      <div className="chips"><span className="chip">${item.depositCents/100} deposit</span></div>
+      <Link className="btn" href={`/equipment?item=${encodeURIComponent(item.id)}#request-equipment`}>Request Dates</Link>
+    </div></article>)}
     <article className="trailer"><div className="trailer-body">
       <h3>Additional Generator Coming Soon</h3><p className="muted">Another generator is being added. Model details and rental information will be posted once confirmed.</p>
       <div className="chips"><span className="chip">New inventory</span><span className="chip">Local rentals</span></div>
       <a className="btn" href="tel:7066996990">Ask What's Available</a>
     </div></article>
   </div></div></section>
+  <section id="request-equipment"><div className="container"><EquipmentRequestForm initialItem={initialItem}/></div></section>
   <section><div className="container"><div className="panel"><h2>Need a trailer too?</h2>
     <p className="muted">Our car hauler and dump trailer rentals still have online availability and booking requests.</p>
     <Link className="btn" href="/#trailers">View Trailers</Link></div></div></section>
