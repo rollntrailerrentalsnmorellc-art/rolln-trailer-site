@@ -27,11 +27,6 @@ export default async function EquipmentPage({searchParams}:{searchParams:Promise
       <p className="muted">{item.id === 'generac-gp6500' || item.id === 'predator-earth-auger' ? 'Return with the same fuel level recorded at pickup. Included accessories are confirmed before handoff.' : 'Return with all included parts and accessories. Item details are confirmed before handoff.'}</p>
       <Link className="btn" href={`/equipment?item=${encodeURIComponent(item.id)}#request-equipment`}>Request Availability</Link>
     </div></article>)}
-    <article className="trailer"><div className="trailer-body">
-      <h3>Additional Generator Coming Soon</h3><p className="muted">Another generator is being added. Model details and rental information will be posted once confirmed.</p>
-      <div className="chips"><span className="chip">New inventory</span><span className="chip">Local rentals</span></div>
-      <a className="btn" href="tel:7066996990">Ask What's Available</a>
-    </div></article>
   </div></div></section>
   <section><div className="container"><div className="section-head"><span className="eyebrow">Simple local rentals</span><h2>How equipment rental works</h2></div>
     <div className="grid three">
@@ -40,8 +35,9 @@ export default async function EquipmentPage({searchParams}:{searchParams:Promise
       <div className="panel"><h3>3. Pick up and return</h3><p className="muted">We document condition and fuel level where applicable at handoff and inspect the equipment and accessories on return.</p></div>
     </div>
     <div className="panel" style={{marginTop:24}}><h2>Rental and return basics</h2>
-      <p className="muted">A rental day is a 24-hour period from the agreed pickup time. Extra time rounds up to another 24-hour period, with the weekly rate used when it costs less. Contact us before your scheduled return to request an extension; it depends on availability and adds rental charges.</p>
-      <p className="muted">The listed $50 is a refundable security deposit, separate from the rental price. If approved, we explain payment before handoff and return the deposit after inspection, less any documented charges under the signed rental terms. It is not a damage limit.</p>
+      <p className="muted">A rental day is a 24-hour period from the agreed pickup time. Extra time rounds up to another 24-hour period, with the weekly rate used when it costs less. Contact us before your scheduled return to request an extension; it depends on availability and adds rental charges. If equipment is kept past the agreed return time without an approved extension, another rental day is charged.</p>
+      <p className="muted">The listed $50 is a refundable security deposit, separate from the rental price. If approved, we collect it before pickup and return the remaining deposit after return inspection, less any documented charges under the signed rental terms. It is not a damage limit.</p>
+      <p className="muted">You may cancel before pickup without a cancellation fee. If you have already paid for a rental that has not started, we refund the rental payment and security deposit.</p>
       <p className="muted">Return equipment reasonably clean, with all included parts. For the generator and auger, return the same fuel level recorded at pickup. Missing fuel is charged at the documented cost to replace it. Excessive cleaning, missing parts, or damage beyond ordinary wear may result in documented charges. We review any charges with you.</p>
       <p className="muted">Bring a valid photo ID at pickup. We confirm item-specific instructions and accessories before release. For questions about a project or meeting location, call or text <a href="tel:7066996990">706-699-6990</a>.</p>
     </div>
