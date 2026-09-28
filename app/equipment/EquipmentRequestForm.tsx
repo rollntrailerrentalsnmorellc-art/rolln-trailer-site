@@ -9,10 +9,21 @@ export default function EquipmentRequestForm({initialItem}: {initialItem?: strin
   const [returnAt, setReturnAt] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState('');
+  const [availability, setAvailability] = useState('');
   const [requestId, setRequestId] = useState('');
   const item = equipment.find(entry => entry.id === itemId) || equipment[0];
   const duration = pickup && returnAt ? new Date(returnAt).getTime() - new Date(pickup).getTime() : 0;
   const estimate = duration > 0 ? equipmentRentalCents(item, duration) : null;
+
+  async function checkDates() {
+    setAvailability('Checking dates…');
+    try {
+      const query=new URLSearchParams({itemId,pickup,returnAt});
+      const response=await fetch(`/api/equipment-availability?${query}`);
+      const result=await response.json();
+      setAvailability(!response.ok ? result.error : result.available===false ? 'Those dates are unavailable. Please choose different times.' : result.available===true ? 'No confirmed rental currently blocks these dates. We will confirm your request.' : 'We will check these dates when you send your request.');
+    } catch {setAvailability('We could not check dates right now. You can still send a request.');}
+  }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -38,14 +49,16 @@ export default function EquipmentRequestForm({initialItem}: {initialItem?: strin
     <h2>Request equipment online</h2>
     <p className="muted">Choose your dates and send a request. We will confirm availability, the rental terms, and payment with you. This form does not reserve equipment or charge a deposit.</p>
     <label htmlFor="equipmentId">Equipment</label>
-    <select id="equipmentId" name="equipmentId" value={itemId} onChange={event => setItemId(event.target.value)} required>
+    <select id="equipmentId" name="equipmentId" value={itemId} onChange={event => {setItemId(event.target.value);setAvailability('');}} required>
       {equipment.map(entry => <option key={entry.id} value={entry.id}>{entry.name}</option>)}
     </select>
     <div className="grid two">
-      <div><label htmlFor="equipment-pickup">Pickup date and time</label><input id="equipment-pickup" name="pickup" type="datetime-local" value={pickup} onChange={event => setPickup(event.target.value)} required /></div>
-      <div><label htmlFor="equipment-return">Return date and time</label><input id="equipment-return" name="returnAt" type="datetime-local" min={pickup} value={returnAt} onChange={event => setReturnAt(event.target.value)} required /></div>
+      <div><label htmlFor="equipment-pickup">Pickup date and time</label><input id="equipment-pickup" name="pickup" type="datetime-local" value={pickup} onChange={event => {setPickup(event.target.value);setAvailability('');}} required /></div>
+      <div><label htmlFor="equipment-return">Return date and time</label><input id="equipment-return" name="returnAt" type="datetime-local" min={pickup} value={returnAt} onChange={event => {setReturnAt(event.target.value);setAvailability('');}} required /></div>
     </div>
     {estimate !== null && <p className="notice">Estimated rental: <strong>${(estimate / 100).toFixed(2)}</strong> · ${item.depositCents / 100} deposit if approved. Rental periods round up to the next 24 hours; the weekly rate applies when it costs less.</p>}
+    <button className="btn2" type="button" onClick={checkDates} disabled={!pickup||!returnAt||duration<=0}>Check dates</button>
+    {availability && <p className="muted" role="status">{availability}</p>}
     <div className="grid two">
       <div><label htmlFor="equipment-name">Full name</label><input id="equipment-name" name="customerName" autoComplete="name" maxLength={120} required /></div>
       <div><label htmlFor="equipment-phone">Phone</label><input id="equipment-phone" name="customerPhone" type="tel" autoComplete="tel" maxLength={40} required /></div>
