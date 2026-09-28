@@ -47,7 +47,7 @@ export default function EquipmentRequestForm({initialItem}: {initialItem?: strin
 
   return <form className="form" onSubmit={submit}>
     <h2>Request equipment online</h2>
-    <p className="muted">Choose your dates and send a request. We will confirm availability, the rental terms, and payment with you. This form does not reserve equipment or charge a deposit.</p>
+    <p className="muted">Choose your dates and send a request. We will confirm availability, the rental terms, and payment with you. This form does not reserve equipment or charge a deposit. The listed $50 security deposit is refundable after return and inspection, subject to documented charges under the signed terms.</p>
     <label htmlFor="equipmentId">Equipment</label>
     <select id="equipmentId" name="equipmentId" value={itemId} onChange={event => {setItemId(event.target.value);setAvailability('');}} required>
       {equipment.map(entry => <option key={entry.id} value={entry.id}>{entry.name}</option>)}
@@ -56,7 +56,7 @@ export default function EquipmentRequestForm({initialItem}: {initialItem?: strin
       <div><label htmlFor="equipment-pickup">Pickup date and time</label><input id="equipment-pickup" name="pickup" type="datetime-local" value={pickup} onChange={event => {setPickup(event.target.value);setAvailability('');}} required /></div>
       <div><label htmlFor="equipment-return">Return date and time</label><input id="equipment-return" name="returnAt" type="datetime-local" min={pickup} value={returnAt} onChange={event => {setReturnAt(event.target.value);setAvailability('');}} required /></div>
     </div>
-    {estimate !== null && <p className="notice">Estimated rental: <strong>${(estimate / 100).toFixed(2)}</strong> · ${item.depositCents / 100} deposit if approved. Rental periods round up to the next 24 hours; the weekly rate applies when it costs less.</p>}
+    {estimate !== null && <p className="notice">Estimated rental: <strong>${(estimate / 100).toFixed(2)}</strong> · ${item.depositCents / 100} refundable security deposit if approved, separate from rent. Rental periods round up to the next 24 hours; the weekly rate applies when it costs less. Final details are confirmed before payment.</p>}
     <button className="btn2" type="button" onClick={checkDates} disabled={!pickup||!returnAt||duration<=0}>Check dates</button>
     {availability && <p className="muted" role="status">{availability}</p>}
     <div className="grid two">
