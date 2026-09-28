@@ -47,7 +47,7 @@ export default function EquipmentRequestForm({initialItem}: {initialItem?: strin
 
   return <form className="form" onSubmit={submit}>
     <h2>Request equipment online</h2>
-    <p className="muted">Choose your dates and send a request. We will confirm availability, the rental terms, and payment with you. This form does not reserve equipment or charge a deposit. The listed $50 security deposit is refundable after return and inspection, subject to documented charges under the signed terms.</p>
+    <p className="muted">Choose your dates and send a request. We will confirm availability, the rental terms, and payment with you. This form does not reserve equipment or charge a deposit. The listed $50 security deposit is refundable after return and inspection, subject to documented charges under the signed terms. Cancellations less than two hours before an agreed pickup incur a $25 fee.</p>
     <label htmlFor="equipmentId">Equipment</label>
     <select id="equipmentId" name="equipmentId" value={itemId} onChange={event => {setItemId(event.target.value);setAvailability('');}} required>
       {equipment.map(entry => <option key={entry.id} value={entry.id}>{entry.name}</option>)}
