@@ -62,6 +62,7 @@ export default async function Owner(){
    <Link className="panel" href="/owner/fleet"><h3>Fleet</h3><p className="muted">{trailerResult.count??0} active trailer records</p></Link>
    <Link className="panel" href="/owner/customers"><h3>Customers</h3><p className="muted">Contacts, history and documents</p></Link>
    <Link className="panel" href="/owner/payments"><h3>Payments</h3><p className="muted">Balances, charges and receipts</p></Link>
+   <Link className="panel" href="/owner/equipment"><h3>Equipment</h3><p className="muted">Requests, date holds, pickup and return</p></Link>
   </div>
  </div></section></main>;
 }
